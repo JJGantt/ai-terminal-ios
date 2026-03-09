@@ -1,5 +1,7 @@
 import Foundation
 import AVFoundation
+import UIKit
+import AudioToolbox
 
 class VoiceRecorder: ObservableObject {
     enum State { case idle, recording, transcribing }
@@ -35,6 +37,8 @@ class VoiceRecorder: ObservableObject {
             recorder?.record()
             startTime = Date()
             state = .recording
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            AudioServicesPlaySystemSound(1113) // JBL_Begin
         } catch {
             print("[VoiceRecorder] start error: \(error)")
         }
@@ -46,6 +50,8 @@ class VoiceRecorder: ObservableObject {
         recorder?.stop()
         recorder = nil
         state = .transcribing
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AudioServicesPlaySystemSound(1114) // JBL_Confirm
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
 
         DispatchQueue.global().async {
