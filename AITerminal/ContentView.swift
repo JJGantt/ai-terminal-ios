@@ -23,7 +23,7 @@ struct ContentView: View {
             tabStrip
 
             if let tabId = sessionManager.activeTabId {
-                TerminalHostView(tabId: tabId)
+                TerminalHostView(tabId: tabId, voiceRecorder: voice)
                     .id(tabId)
                     .ignoresSafeArea(edges: .bottom)
             } else {

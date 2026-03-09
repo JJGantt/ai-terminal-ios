@@ -112,6 +112,13 @@ class SessionManager: ObservableObject {
         send(["type": "input", "tabId": tabId, "data": "\u{03}"])
     }
 
+    func switchTab(delta: Int) {
+        guard !tabs.isEmpty, let activeId = activeTabId,
+              let currentIndex = tabs.firstIndex(where: { $0.id == activeId }) else { return }
+        let newIndex = (currentIndex + delta + tabs.count) % tabs.count
+        subscribe(to: tabs[newIndex].id)
+    }
+
     func resize(tabId: String, cols: Int, rows: Int) {
         send(["type": "resize", "tabId": tabId, "cols": cols, "rows": rows])
     }
