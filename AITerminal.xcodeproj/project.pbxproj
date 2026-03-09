@@ -14,6 +14,7 @@
 		B7F0F4D2F23A15093D211C2F /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAFE3125AAD84C20BFD1A9F /* SessionManager.swift */; };
 		B9FAA24F97B5670A43106256 /* SessionsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6737578460D11EBD02879079 /* SessionsPanel.swift */; };
 		C59C73B0D5A9F0A3048A4213 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E76DC3A35B533D7D16E96E99 /* Assets.xcassets */; };
+		C7A0A8D0E4DCCA706F878529 /* ClaudeSettingsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEA91078BB65775B4C47586E /* ClaudeSettingsPanel.swift */; };
 		E253D41E1BCBDB226928624B /* TerminalHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 937E920F550E59346755AC74 /* TerminalHostView.swift */; };
 		FFCA456B1C24E4E325CA0B32 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95CD165BDEBA79F803AC71ED /* ContentView.swift */; };
 /* End PBXBuildFile section */
@@ -29,6 +30,7 @@
 		95CD165BDEBA79F803AC71ED /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
 		E76DC3A35B533D7D16E96E99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EEA91078BB65775B4C47586E /* ClaudeSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeSettingsPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +66,7 @@
 			children = (
 				227C3C8EBA63C80934613211 /* App.swift */,
 				E76DC3A35B533D7D16E96E99 /* Assets.xcassets */,
+				EEA91078BB65775B4C47586E /* ClaudeSettingsPanel.swift */,
 				95CD165BDEBA79F803AC71ED /* ContentView.swift */,
 				0A702D677679FCCCD80B797D /* Info.plist */,
 				06010347D118175D67C9A554 /* KeypadView.swift */,
@@ -146,6 +149,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				14BD7272074FEA494B4780B1 /* App.swift in Sources */,
+				C7A0A8D0E4DCCA706F878529 /* ClaudeSettingsPanel.swift in Sources */,
 				FFCA456B1C24E4E325CA0B32 /* ContentView.swift in Sources */,
 				1F93B5BF454D4C059150F85D /* KeypadView.swift in Sources */,
 				B7F0F4D2F23A15093D211C2F /* SessionManager.swift in Sources */,

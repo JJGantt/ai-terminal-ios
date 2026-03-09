@@ -14,6 +14,7 @@ struct ContentView: View {
     @StateObject private var voice = VoiceRecorder()
     @State private var keyboardVisible = false
     @State private var showSessions = false
+    @State private var showClaudeSettings = false
 
     var activeTab: TabInfo? {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
@@ -35,6 +36,9 @@ struct ContentView: View {
         .background(.black)
         .sheet(isPresented: $showSessions) {
             SessionsPanel(isPresented: $showSessions)
+        }
+        .sheet(isPresented: $showClaudeSettings) {
+            ClaudeSettingsPanel(isPresented: $showClaudeSettings)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
@@ -119,10 +123,8 @@ struct ContentView: View {
         VStack(spacing: 0) {
             Divider().opacity(0.3)
             HStack(spacing: 0) {
-                // Sessions button
-                Button {
-                    showSessions = true
-                } label: {
+                // Sessions
+                Button { showSessions = true } label: {
                     Image(systemName: "list.bullet")
                         .font(.system(size: 20))
                         .foregroundStyle(.primary)
@@ -130,17 +132,25 @@ struct ContentView: View {
                         .frame(height: 52)
                 }
 
-                // Voice / transcribing button (center)
+                // Voice / transcribing
                 voiceButton
                     .frame(maxWidth: .infinity)
 
-                // Keyboard / dismiss button
+                // Keyboard / dismiss
                 keyboardButton
                     .frame(maxWidth: .infinity)
+
+                // Claude settings
+                Button { showClaudeSettings = true } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                }
             }
             .background(.black.opacity(0.85))
             .overlay(alignment: .topLeading) {
-                // Stop button floats above the bar when Claude is working
                 if activeTab?.working == true {
                     Button(action: sessionManager.stopActive) {
                         Image(systemName: "stop.fill")
