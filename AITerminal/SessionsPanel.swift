@@ -13,9 +13,14 @@ struct SessionsPanel: View {
                         sessionManager.newTab(on: "mac")
                         isPresented = false
                     } label: {
-                        Label("Mac  ⌘", systemImage: "plus.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(sessionManager.macConnected ? .blue : .secondary)
+                        HStack(spacing: 10) {
+                            Image(systemName: "apple.logo")
+                                .frame(width: 18)
+                            Image(systemName: "plus.circle.fill")
+                            Spacer()
+                        }
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(sessionManager.macConnected ? .blue : .secondary)
                     }
                     .disabled(!sessionManager.macConnected)
 
@@ -23,9 +28,14 @@ struct SessionsPanel: View {
                         sessionManager.newTab(on: "pi")
                         isPresented = false
                     } label: {
-                        Label("Pi  π", systemImage: "plus.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(sessionManager.piConnected ? .blue : .secondary)
+                        HStack(spacing: 10) {
+                            Text("π")
+                                .font(.system(size: 16, weight: .semibold))
+                                .frame(width: 18)
+                            Image(systemName: "plus.circle.fill")
+                            Spacer()
+                        }
+                        .foregroundStyle(sessionManager.piConnected ? .blue : .secondary)
                     }
                     .disabled(!sessionManager.piConnected)
                 }
@@ -42,9 +52,7 @@ struct SessionsPanel: View {
                                 isPresented = false
                             } label: {
                                 HStack(spacing: 10) {
-                                    Text(session.host == "pi" ? "π" : "⌘")
-                                        .font(.system(size: 13, weight: .semibold))
-                                        .foregroundStyle(.secondary)
+                                    hostIcon(session.host)
                                         .frame(width: 18)
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(session.title)
@@ -79,6 +87,19 @@ struct SessionsPanel: View {
             }
         }
         .onAppear { sessionManager.requestHistory() }
+    }
+
+    @ViewBuilder
+    private func hostIcon(_ host: String) -> some View {
+        if host == "pi" {
+            Text("π")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.secondary)
+        } else {
+            Image(systemName: "apple.logo")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func formattedDate(_ iso: String) -> String {
