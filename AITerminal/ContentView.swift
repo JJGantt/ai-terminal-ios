@@ -235,8 +235,6 @@ struct TabChip: View {
     let isOnline: Bool
     let onTap: () -> Void
 
-    private var hostBadge: String { tab.host == "pi" ? "π" : "⌘" }
-
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 4) {
@@ -248,9 +246,15 @@ struct TabChip: View {
                 Text(tab.name)
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
-                Text(hostBadge)
-                    .font(.system(size: 9, weight: .semibold))
-                    .opacity(0.6)
+                if tab.host == "pi" {
+                    Text("π")
+                        .font(.system(size: 9, weight: .semibold))
+                        .opacity(0.6)
+                } else {
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 9, weight: .medium))
+                        .opacity(0.6)
+                }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
