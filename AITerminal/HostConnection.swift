@@ -96,7 +96,9 @@ class HostConnection: ObservableObject {
                     guard let id        = dict["id"]        as? String,
                           let title     = dict["title"]     as? String,
                           let timestamp = dict["timestamp"] as? String else { return nil }
-                    return HistorySession(id: id, title: title, timestamp: timestamp, host: self.hostId)
+                    let source = dict["source"] as? String ?? ""
+                    let host = source.contains("pi") ? "pi" : "mac"
+                    return HistorySession(id: id, title: title, timestamp: timestamp, host: host)
                 }
 
             default: break

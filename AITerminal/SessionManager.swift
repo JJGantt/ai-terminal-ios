@@ -63,11 +63,18 @@ class SessionManager: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Merge history, sorted newest-first
+        // Merge history, deduplicate by session ID, sorted newest-first
         mac.$historySessions.combineLatest(pi.$historySessions)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] macH, piH in
-                self?.historySessions = (macH + piH).sorted { $0.timestamp > $1.timestamp }
+            .sink { [weak self] (macH: [HistorySession], piH: [HistorySession]) in
+                var seen = Set<String>()
+                var merged: [HistorySession] = []
+                for session in (macH + piH).sorted(by: { $0.timestamp > $1.timestamp }) {
+                    if seen.insert(session.id).inserted {
+                        merged.append(session)
+                    }
+                }
+                self?.historySessions = merged
             }
             .store(in: &cancellables)
 
