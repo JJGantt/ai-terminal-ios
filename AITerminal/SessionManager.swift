@@ -149,6 +149,15 @@ class SessionManager: ObservableObject {
         connection(for: tabId)?.sendInput(text, tabId: tabId)
     }
 
+    /// Send a slash command: clears the line, then types the command after a brief delay.
+    func sendSlashCommand(_ command: String) {
+        guard let tabId = activeTabId, let conn = connection(for: tabId) else { return }
+        conn.sendInput("\u{15}", tabId: tabId)  // Ctrl+U: clear line
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            conn.sendInput(command + "\r", tabId: tabId)
+        }
+    }
+
     func stopActive() {
         guard let tabId = activeTabId else { return }
         connection(for: tabId)?.stopActive(tabId: tabId)
