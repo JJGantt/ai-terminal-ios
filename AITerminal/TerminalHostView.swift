@@ -51,10 +51,7 @@ struct TerminalHostView: UIViewRepresentable {
         func setTerminalTitle(source: TerminalView, title: String) {}
         func scrolled(source: TerminalView, position: Double) {}
         func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {}
-        func requestOpenLink(source: TerminalView, link: String, params: [String: String]) {}
+        func requestOpenLink(source: TerminalView, link: String, params: [String:String]) {}
         func bell(source: TerminalView) {}
-        func rangeChanged(source: TerminalView, startY: Int, endY: Int) {}
-        func clipboard(source: TerminalView, content: Data) {}
-        func iTermContent(source: TerminalView, content: Data) {}
     }
 }
