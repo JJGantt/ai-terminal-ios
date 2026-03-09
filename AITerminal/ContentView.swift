@@ -53,26 +53,36 @@ struct ContentView: View {
     // MARK: — Tab strip
 
     var tabStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                connectionDot
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    connectionDot
 
-                ForEach(sessionManager.tabs) { tab in
-                    TabChip(
-                        tab: tab,
-                        isActive: tab.id == sessionManager.activeTabId,
-                        onTap: { sessionManager.subscribe(to: tab.id) }
-                    )
+                    ForEach(sessionManager.tabs) { tab in
+                        TabChip(
+                            tab: tab,
+                            isActive: tab.id == sessionManager.activeTabId,
+                            onTap: { sessionManager.subscribe(to: tab.id) }
+                        )
+                        .id(tab.id)
+                    }
+
+                    if sessionManager.tabs.isEmpty && sessionManager.connected {
+                        Text("No open sessions")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-
-                if sessionManager.tabs.isEmpty && sessionManager.connected {
-                    Text("No open sessions")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .onChange(of: sessionManager.activeTabId) { _, newId in
+                if let id = newId {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
         }
         .background(.black.opacity(0.85))
         .overlay(alignment: .bottom) {
