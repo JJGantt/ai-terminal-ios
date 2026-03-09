@@ -22,8 +22,6 @@
 	<string>1</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connects to your Mac over Tailscale to stream Claude sessions.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Used for voice input to Claude sessions.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

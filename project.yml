@@ -2,7 +2,7 @@ name: AITerminal
 options:
   bundleIdPrefix: com.jaredgantt
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "17.0"
   xcodeVersion: "15"
 
 packages:
