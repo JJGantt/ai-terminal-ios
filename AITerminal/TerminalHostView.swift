@@ -78,7 +78,7 @@ struct TerminalHostView: UIViewRepresentable {
         }
 
         func sizeChanged(source: TerminalView, newCols: Int, newRows: Int) {
-            sessionManager.resize(tabId: tabId, cols: newCols, rows: newRows)
+            // PTY size is controlled by the Mac window — don't resize from phone
         }
 
         func setTerminalTitle(source: TerminalView, title: String) {}
