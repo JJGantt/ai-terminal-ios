@@ -34,17 +34,30 @@ class SessionManager: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// Maintains stable tab order — new tabs appended, removed tabs pruned.
+    private var tabOrder: [String] = []
+
     init() {
-        // Merge tabs from both connections
+        // Merge tabs from both connections, preserving creation order
         mac.$tabs.combineLatest(pi.$tabs)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] macTabs, piTabs in
                 guard let self else { return }
-                let all = macTabs + piTabs
-                self.tabs = all
-                if let active = self.activeTabId, !all.contains(where: { $0.id == active }) {
-                    self.activeTabId = all.first?.id
-                } else if self.activeTabId == nil, let first = all.first {
+                let incoming = macTabs + piTabs
+                let incomingIds = Set(incoming.map(\.id))
+                // Remove tabs that no longer exist
+                self.tabOrder.removeAll { !incomingIds.contains($0) }
+                // Append any new tabs at the end
+                for tab in incoming where !self.tabOrder.contains(tab.id) {
+                    self.tabOrder.append(tab.id)
+                }
+                // Build ordered list
+                let lookup = Dictionary(incoming.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                self.tabs = self.tabOrder.compactMap { lookup[$0] }
+
+                if let active = self.activeTabId, !incomingIds.contains(active) {
+                    self.activeTabId = self.tabs.first?.id
+                } else if self.activeTabId == nil, let first = self.tabs.first {
                     self.subscribe(to: first.id)
                 }
             }
@@ -73,10 +86,12 @@ class SessionManager: ObservableObject {
         // the tab won't be in .tabs yet when tab_created fires (sessions broadcast
         // arrives after).
         mac.onTabCreated = { [weak self] (tabId: String) in
+            print("[SessionManager] mac onTabCreated: \(tabId)")
             self?.activeTabId = tabId
             self?.mac.subscribe(to: tabId)
         }
         pi.onTabCreated = { [weak self] (tabId: String) in
+            print("[SessionManager] pi onTabCreated: \(tabId)")
             self?.activeTabId = tabId
             self?.pi.subscribe(to: tabId)
         }
@@ -132,7 +147,9 @@ class SessionManager: ObservableObject {
     }
 
     func newTab(on hostId: String = "mac") {
-        connection(forHost: hostId).newTab()
+        let conn = connection(forHost: hostId)
+        print("[SessionManager] newTab on \(hostId), conn.hostId=\(conn.hostId), conn.connected=\(conn.connected)")
+        conn.newTab()
     }
 
     func resumeTab(sessionId: String, host: String) {

@@ -83,7 +83,11 @@ class HostConnection: ObservableObject {
                 self.onData?(tabId, chunk)
 
             case "tab_created":
-                guard let tabId = json["tabId"] as? String else { return }
+                guard let tabId = json["tabId"] as? String else {
+                    print("[\(self.hostId)] tab_created: missing tabId")
+                    return
+                }
+                print("[\(self.hostId)] tab_created received: \(tabId), onTabCreated=\(self.onTabCreated != nil)")
                 self.onTabCreated?(tabId)
 
             case "history":
@@ -124,7 +128,10 @@ class HostConnection: ObservableObject {
         send(["type": "voice_audio", "tabId": tabId, "data": base64, "durationS": durationS])
     }
 
-    func newTab()                        { send(["type": "new_tab"]) }
+    func newTab() {
+        print("[\(hostId)] newTab called, connected=\(connected), ws=\(webSocket != nil)")
+        send(["type": "new_tab"])
+    }
     func resumeTab(sessionId: String)    { send(["type": "resume_tab", "sessionId": sessionId]) }
     func requestHistory()                { send(["type": "history_request"]) }
 
@@ -132,7 +139,17 @@ class HostConnection: ObservableObject {
         guard
             let data = try? JSONSerialization.data(withJSONObject: dict),
             let text = String(data: data, encoding: .utf8)
-        else { return }
-        webSocket?.send(.string(text)) { _ in }
+        else {
+            print("[\(hostId)] send: serialization failed for \(dict)")
+            return
+        }
+        guard let ws = webSocket else {
+            print("[\(hostId)] send: webSocket is nil, dropping \(dict["type"] ?? "?")")
+            return
+        }
+        print("[\(hostId)] sending: \(text.prefix(120))")
+        ws.send(.string(text)) { error in
+            if let error { print("[\(self.hostId)] send error: \(error)") }
+        }
     }
 }
