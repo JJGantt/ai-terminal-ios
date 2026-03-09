@@ -20,7 +20,7 @@ struct ClaudeSettingsPanel: View {
             List {
                 Section("Usage") {
                     Button {
-                        sessionManager.sendInput("\u{1b}/usage\r")
+                        sessionManager.sendInput("\u{15}/usage\r")
                         isPresented = false
                     } label: {
                         Label("Check Usage", systemImage: "chart.bar.fill")
@@ -31,7 +31,7 @@ struct ClaudeSettingsPanel: View {
                 Section("Model") {
                     ForEach(models, id: \.alias) { model in
                         Button {
-                            sessionManager.sendInput("\u{1b}/model \(model.alias)\r")
+                            sessionManager.sendInput("\u{15}/model \(model.alias)\r")
                             isPresented = false
                         } label: {
                             Text(model.label)
@@ -39,7 +39,7 @@ struct ClaudeSettingsPanel: View {
                         }
                     }
                     Button {
-                        sessionManager.sendInput("\u{1b}/model\r")
+                        sessionManager.sendInput("\u{15}/model\r")
                         isPresented = false
                     } label: {
                         Label("Browse All Models…", systemImage: "chevron.right")
