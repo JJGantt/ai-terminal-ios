@@ -35,3 +35,4 @@ targets:
           UISceneConfigurations: {}
         UIStatusBarStyle: UIStatusBarStyleLightContent
         NSLocalNetworkUsageDescription: Connects to your Mac over Tailscale to stream Claude sessions.
+        NSMicrophoneUsageDescription: Used for voice input to Claude sessions.
