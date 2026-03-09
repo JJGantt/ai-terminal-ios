@@ -35,6 +35,28 @@ struct TerminalHostView: UIViewRepresentable {
         swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
 
+        // Send initial resize once layout is known
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak view] in
+            guard let view else { return }
+            let cols = view.getTerminal().cols
+            let rows = view.getTerminal().rows
+            if cols > 0 && rows > 0 {
+                sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
+            }
+        }
+
+        // Re-send resize when app becomes active (returning from background)
+        context.coordinator.foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
+        ) { [weak view] _ in
+            guard let view else { return }
+            let cols = view.getTerminal().cols
+            let rows = view.getTerminal().rows
+            if cols > 0 && rows > 0 {
+                sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
+            }
+        }
+
         return view
     }
 
@@ -52,11 +74,18 @@ struct TerminalHostView: UIViewRepresentable {
         let tabId: String
         let sessionManager: SessionManager
         let voiceRecorder: VoiceRecorder
+        var foregroundObserver: NSObjectProtocol?
 
         init(tabId: String, sessionManager: SessionManager, voiceRecorder: VoiceRecorder) {
             self.tabId = tabId
             self.sessionManager = sessionManager
             self.voiceRecorder = voiceRecorder
+        }
+
+        deinit {
+            if let observer = foregroundObserver {
+                NotificationCenter.default.removeObserver(observer)
+            }
         }
 
         @objc func handleTap() {
