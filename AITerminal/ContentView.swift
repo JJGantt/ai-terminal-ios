@@ -38,7 +38,7 @@ struct ContentView: View {
             SessionsPanel(isPresented: $showSessions)
         }
         .sheet(isPresented: $showClaudeSettings) {
-            ClaudeSettingsPanel(isPresented: $showClaudeSettings, voice: voice)
+            ClaudeSettingsPanel(isPresented: $showClaudeSettings)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
@@ -51,9 +51,7 @@ struct ContentView: View {
                 print("[Voice] microphone permission: \(granted)")
             }
             voice.onComplete = { data, duration in
-                let prefix = voice.thinkingPrefix
-                voice.thinkingPrefix = nil
-                sessionManager.sendVoice(audioData: data, durationS: duration, thinkingPrefix: prefix)
+                sessionManager.sendVoice(audioData: data, durationS: duration)
             }
         }
     }
@@ -179,19 +177,11 @@ struct ContentView: View {
             Button {
                 voice.start()
             } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(voice.thinkingPrefix != nil ? .purple : .primary)
-                    if voice.thinkingPrefix != nil {
-                        Image(systemName: "brain")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.purple)
-                            .offset(x: 10, y: -8)
-                    }
-                }
-                .frame(height: 52)
-                .frame(maxWidth: .infinity)
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.primary)
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
             }
 
         case .recording:

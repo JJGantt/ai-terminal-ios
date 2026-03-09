@@ -154,13 +154,11 @@ class SessionManager: ObservableObject {
         send(["type": "history_request"])
     }
 
-    func sendVoice(audioData: Data, durationS: Double, thinkingPrefix: String? = nil) {
+    func sendVoice(audioData: Data, durationS: Double) {
         guard let tabId = activeTabId else { return }
         let base64 = audioData.base64EncodedString()
         print("[SessionManager] sending voice audio \(String(format: "%.1f", durationS))s to tab \(tabId)")
-        var dict: [String: Any] = ["type": "voice_audio", "tabId": tabId, "data": base64, "durationS": durationS]
-        if let prefix = thinkingPrefix { dict["prefix"] = prefix }
-        send(dict)
+        send(["type": "voice_audio", "tabId": tabId, "data": base64, "durationS": durationS])
     }
 
     private func send(_ dict: [String: Any]) {
