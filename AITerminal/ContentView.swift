@@ -160,7 +160,18 @@ struct ContentView: View {
             }
             .background(.black.opacity(0.85))
             .overlay(alignment: .topLeading) {
-                if activeTab?.working == true {
+                if voice.state == .recording {
+                    Button(action: voice.cancel) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(.red)
+                            .frame(width: 36, height: 36)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .padding(.leading, 8)
+                    .offset(y: -44)
+                    .transition(.scale.combined(with: .opacity))
+                } else if activeTab?.working == true {
                     Button(action: sessionManager.stopActive) {
                         Image(systemName: "stop.fill")
                             .font(.system(size: 15))
@@ -173,6 +184,7 @@ struct ContentView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
+            .animation(.spring(duration: 0.2), value: voice.state == .recording)
             .animation(.spring(duration: 0.2), value: activeTab?.working)
         }
     }
