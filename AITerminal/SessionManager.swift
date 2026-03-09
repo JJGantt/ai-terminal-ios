@@ -13,6 +13,24 @@ struct HistorySession: Identifiable {
     let title: String
     let timestamp: String
     let host: String   // "mac" or "pi"
+    let parsedDate: Date
+
+    init(id: String, title: String, timestamp: String, host: String) {
+        self.id = id
+        self.title = title
+        self.timestamp = timestamp
+        self.host = host
+        // Parse various timestamp formats to a Date for sorting
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: timestamp) { self.parsedDate = d; return }
+        iso.formatOptions = [.withInternetDateTime]
+        if let d = iso.date(from: timestamp) { self.parsedDate = d; return }
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        df.timeZone = .current
+        self.parsedDate = df.date(from: timestamp) ?? .distantPast
+    }
 }
 
 class SessionManager: ObservableObject {
@@ -69,7 +87,7 @@ class SessionManager: ObservableObject {
             .sink { [weak self] (macH: [HistorySession], piH: [HistorySession]) in
                 var seen = Set<String>()
                 var merged: [HistorySession] = []
-                for session in (macH + piH).sorted(by: { $0.timestamp > $1.timestamp }) {
+                for session in (macH + piH).sorted(by: { $0.parsedDate > $1.parsedDate }) {
                     if seen.insert(session.id).inserted {
                         merged.append(session)
                     }
