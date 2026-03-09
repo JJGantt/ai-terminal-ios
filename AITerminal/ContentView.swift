@@ -2,7 +2,10 @@ import SwiftUI
 
 extension UIApplication {
     func endEditing() {
-        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        connectedScenes
+            .filter { $0.activationState == .foregroundActive }
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.endEditing(true)
     }
 }
 
