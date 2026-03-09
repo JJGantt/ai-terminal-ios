@@ -129,6 +129,16 @@ class SessionManager: ObservableObject {
         connection(for: tabId)?.stopActive(tabId: tabId)
     }
 
+    func closeTab(_ tabId: String) {
+        connection(for: tabId)?.killTab(tabId)
+        // Switch to adjacent tab
+        if activeTabId == tabId, let idx = tabs.firstIndex(where: { $0.id == tabId }) {
+            let remaining = tabs.filter { $0.id != tabId }
+            activeTabId = remaining.isEmpty ? nil : remaining[min(idx, remaining.count - 1)].id
+            if let newId = activeTabId { subscribe(to: newId) }
+        }
+    }
+
     func switchTab(delta: Int) {
         guard !tabs.isEmpty,
               let activeId = activeTabId,

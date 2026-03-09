@@ -128,6 +128,11 @@ class HostConnection: ObservableObject {
         send(["type": "voice_audio", "tabId": tabId, "data": base64, "durationS": durationS])
     }
 
+    func killTab(_ tabId: String) {
+        print("[\(hostId)] killTab: \(tabId)")
+        send(["type": "kill_tab", "tabId": tabId])
+    }
+
     func newTab() {
         print("[\(hostId)] newTab called, connected=\(connected), ws=\(webSocket != nil)")
         send(["type": "new_tab"])

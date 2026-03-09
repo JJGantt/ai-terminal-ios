@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var keyboardVisible = false
     @State private var showSessions = false
     @State private var showClaudeSettings = false
+    @State private var pendingCloseTabId: String?
 
     var activeTab: TabInfo? {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
@@ -73,8 +74,21 @@ struct ContentView: View {
                             tab: tab,
                             isActive: tab.id == sessionManager.activeTabId,
                             isOnline: isOnline(tab),
+                            isPendingClose: pendingCloseTabId == tab.id,
                             onTap: {
-                                if isOnline(tab) { sessionManager.subscribe(to: tab.id) }
+                                guard isOnline(tab) else { return }
+                                if pendingCloseTabId == tab.id {
+                                    // Second tap on red tab → close
+                                    pendingCloseTabId = nil
+                                    sessionManager.closeTab(tab.id)
+                                } else if tab.id == sessionManager.activeTabId {
+                                    // Tap on already-active tab → arm close
+                                    pendingCloseTabId = tab.id
+                                } else {
+                                    // Tap on inactive tab → switch to it
+                                    pendingCloseTabId = nil
+                                    sessionManager.subscribe(to: tab.id)
+                                }
                             }
                         )
                         .id(tab.id)
@@ -245,12 +259,13 @@ struct TabChip: View {
     let tab: TabInfo
     let isActive: Bool
     let isOnline: Bool
+    let isPendingClose: Bool
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 4) {
-                if tab.working && isOnline {
+                if tab.working && isOnline && !isPendingClose {
                     Circle()
                         .fill(.green)
                         .frame(width: 6, height: 6)
@@ -279,10 +294,12 @@ struct TabChip: View {
     }
 
     private var chipBackground: Color {
-        isActive && isOnline ? .blue : Color(.systemGray6)
+        if isPendingClose { return .red }
+        return isActive && isOnline ? .blue : Color(.systemGray6)
     }
 
     private var chipForeground: Color {
-        isActive && isOnline ? .white : .primary
+        if isPendingClose { return .white }
+        return isActive && isOnline ? .white : .primary
     }
 }
