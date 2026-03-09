@@ -7,6 +7,7 @@ class VoiceRecorder: ObservableObject {
     enum State { case idle, recording, transcribing }
 
     @Published var state: State = .idle
+    @Published var thinkingPrefix: String? = nil
 
     private var recorder: AVAudioRecorder?
     private var startTime: Date?

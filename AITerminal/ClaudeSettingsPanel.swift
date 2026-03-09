@@ -1,37 +1,27 @@
 import SwiftUI
 
-private struct ModelOption {
-    let label: String
-    let id: String
-}
-
 private struct ThinkingOption {
     let label: String
-    let cmd: String
+    let prefix: String  // prepended to next voice recording
 }
 
-private let models: [ModelOption] = [
-    ModelOption(label: "Opus 4.6",   id: "claude-opus-4-6"),
-    ModelOption(label: "Sonnet 4.6", id: "claude-sonnet-4-6"),
-    ModelOption(label: "Haiku 4.5",  id: "claude-haiku-4-5-20251001"),
-]
-
 private let thinkingLevels: [ThinkingOption] = [
-    ThinkingOption(label: "Think",      cmd: "think "),
-    ThinkingOption(label: "Think Hard", cmd: "think hard "),
-    ThinkingOption(label: "Ultrathink", cmd: "ultrathink "),
+    ThinkingOption(label: "Think",      prefix: "think: "),
+    ThinkingOption(label: "Think Hard", prefix: "think hard: "),
+    ThinkingOption(label: "Ultrathink", prefix: "ultrathink: "),
 ]
 
 struct ClaudeSettingsPanel: View {
     @EnvironmentObject var sessionManager: SessionManager
     @Binding var isPresented: Bool
+    let voice: VoiceRecorder
 
     var body: some View {
         NavigationView {
             List {
                 Section("Usage") {
                     Button {
-                        sessionManager.sendInput("/usage\r")
+                        sessionManager.sendInput("\u{1b}/usage\r")
                         isPresented = false
                     } label: {
                         Label("Check Usage", systemImage: "chart.bar.fill")
@@ -40,27 +30,46 @@ struct ClaudeSettingsPanel: View {
                 }
 
                 Section("Model") {
-                    ForEach(models, id: \.id) { model in
-                        Button {
-                            sessionManager.sendInput("/model \(model.id)\r")
-                            isPresented = false
-                        } label: {
-                            Text(model.label)
-                                .foregroundStyle(.primary)
-                        }
+                    Button {
+                        sessionManager.sendInput("\u{1b}/model\r")
+                        isPresented = false
+                    } label: {
+                        Label("Choose Model…", systemImage: "cpu")
+                            .foregroundStyle(.primary)
                     }
                 }
 
-                Section("Thinking") {
-                    ForEach(thinkingLevels, id: \.cmd) { level in
+                Section {
+                    ForEach(thinkingLevels, id: \.prefix) { level in
                         Button {
-                            sessionManager.sendInput(level.cmd)
+                            voice.thinkingPrefix = level.prefix
                             isPresented = false
                         } label: {
-                            Text(level.label)
-                                .foregroundStyle(.primary)
+                            HStack {
+                                Text(level.label)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                if voice.thinkingPrefix == level.prefix {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                            }
                         }
                     }
+                    if voice.thinkingPrefix != nil {
+                        Button(role: .destructive) {
+                            voice.thinkingPrefix = nil
+                            isPresented = false
+                        } label: {
+                            Text("Clear Thinking Mode")
+                        }
+                    }
+                } header: {
+                    Text("Thinking (next voice)")
+                } footer: {
+                    Text("Prepends the selected keyword to your next voice recording.")
+                        .font(.caption)
                 }
             }
             .navigationTitle("Claude")
