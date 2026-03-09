@@ -18,11 +18,14 @@ class SessionManager: ObservableObject {
     private var webSocket: URLSessionWebSocketTask?
     private let urlSession = URLSession(configuration: .default)
 
-    let macHost = "100.106.101.57"
+    // Try local first (fast, same network), fall back to Tailscale (remote)
+    private let hosts = ["Jareds-MacBook-Air.local", "100.106.101.57"]
+    private var hostIndex = 0
     let wsPort = 27183
 
     func connect() {
-        guard let url = URL(string: "ws://\(macHost):\(wsPort)") else { return }
+        let host = hosts[hostIndex]
+        guard let url = URL(string: "ws://\(host):\(wsPort)") else { return }
         print("[SessionManager] connecting to \(url)")
         webSocket = urlSession.webSocketTask(with: url)
         webSocket?.resume()
@@ -42,8 +45,10 @@ class SessionManager: ObservableObject {
             case .failure(let error):
                 print("[SessionManager] connection error: \(error)")
                 DispatchQueue.main.async { self.connected = false }
+                // Rotate through hosts on failure
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    print("[SessionManager] reconnecting...")
+                    self.hostIndex = (self.hostIndex + 1) % self.hosts.count
+                    print("[SessionManager] reconnecting via \(self.hosts[self.hostIndex])...")
                     self.connect()
                 }
             }
