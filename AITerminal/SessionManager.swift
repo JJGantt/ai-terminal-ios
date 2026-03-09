@@ -14,6 +14,8 @@ class SessionManager: ObservableObject {
 
     // Callbacks from TerminalHostView instances — fed when data arrives
     var onData: [String: (String) -> Void] = [:]
+    // Called to focus the active terminal (show keyboard)
+    var focusTerminal: (() -> Void)?
 
     private var webSocket: URLSessionWebSocketTask?
     private let urlSession = URLSession(configuration: .default)

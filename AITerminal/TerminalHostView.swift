@@ -17,6 +17,11 @@ struct TerminalHostView: UIViewRepresentable {
             }
         }
 
+        // Register focus callback — lets ContentView bring up the keyboard
+        sessionManager.focusTerminal = { [weak view] in
+            view?.becomeFirstResponder()
+        }
+
         return view
     }
 

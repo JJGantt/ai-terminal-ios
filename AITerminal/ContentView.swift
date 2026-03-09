@@ -9,7 +9,6 @@ extension UIApplication {
 struct ContentView: View {
     @EnvironmentObject var sessionManager: SessionManager
     @StateObject private var voice = VoiceRecorder()
-    @State private var showKeypad = false
     @State private var keyboardVisible = false
 
     var activeTab: TabInfo? {
@@ -103,12 +102,6 @@ struct ContentView: View {
 
     var controlOverlay: some View {
         VStack(alignment: .trailing, spacing: 10) {
-            if showKeypad {
-                KeypadView(onKey: { sessionManager.sendInput($0) })
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.trailing, 16)
-            }
-
             HStack(spacing: 10) {
                 // Stop button — only when Claude is working
                 if activeTab?.working == true {
@@ -177,16 +170,15 @@ struct ContentView: View {
         Button {
             if keyboardVisible {
                 UIApplication.shared.endEditing()
-                showKeypad = false
             } else {
-                withAnimation(.spring(duration: 0.25)) { showKeypad.toggle() }
+                sessionManager.focusTerminal?()
             }
         } label: {
-            Image(systemName: keyboardVisible ? "keyboard.chevron.compact.down" : (showKeypad ? "keyboard.chevron.compact.down" : "keyboard"))
+            Image(systemName: keyboardVisible ? "keyboard.chevron.compact.down" : "keyboard")
                 .font(.system(size: 18))
                 .frame(width: 48, height: 48)
                 .background(.ultraThinMaterial, in: Circle())
-                .foregroundStyle(keyboardVisible ? .secondary : .primary)
+                .foregroundStyle(.primary)
         }
     }
 }
