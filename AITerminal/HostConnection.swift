@@ -141,6 +141,7 @@ class HostConnection: ObservableObject {
     }
     func resumeTab(sessionId: String)    { send(["type": "resume_tab", "sessionId": sessionId]) }
     func requestHistory()                { send(["type": "history_request"]) }
+    func regenerateName(sessionId: String) { send(["type": "regenerate_name", "sessionId": sessionId]) }
 
     func send(_ dict: [String: Any]) {
         guard

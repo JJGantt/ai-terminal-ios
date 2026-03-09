@@ -204,4 +204,8 @@ class SessionManager: ObservableObject {
         mac.requestHistory()
         pi.requestHistory()
     }
+
+    func regenerateName(sessionId: String, host: String) {
+        connection(forHost: host).regenerateName(sessionId: sessionId)
+    }
 }

@@ -68,6 +68,13 @@ struct SessionsPanel: View {
                             }
                             .disabled(!online)
                             .opacity(online ? 1.0 : 0.5)
+                            .contextMenu {
+                                Button {
+                                    sessionManager.regenerateName(sessionId: session.id, host: session.host)
+                                } label: {
+                                    Label("Regenerate Name", systemImage: "arrow.triangle.2.circlepath")
+                                }
+                            }
                         }
                     }
                 } else {
