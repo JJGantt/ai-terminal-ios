@@ -1,4 +1,3 @@
-#if os(iOS)
 import Foundation
 import AVFoundation
 
@@ -68,4 +67,3 @@ class VoiceRecorder: ObservableObject {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }
-#endif
