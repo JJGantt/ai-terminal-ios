@@ -104,12 +104,21 @@ struct SessionsPanel: View {
 
     private func formattedDate(_ iso: String) -> String {
         let formatter = ISO8601DateFormatter()
+        // Try with fractional seconds + timezone (Mac format)
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: iso) {
             return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
         }
+        // Try with timezone, no fractional seconds
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: iso) {
+            return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
+        }
+        // Try without timezone (Pi format: 2026-03-09T13:44:40)
+        let df = DateFormatter()
+        df.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+        df.timeZone = .current
+        if let date = df.date(from: iso) {
             return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
         }
         return iso
