@@ -23,6 +23,7 @@ class SessionManager: ObservableObject {
 
     func connect() {
         guard let url = URL(string: "ws://\(macHost):\(wsPort)") else { return }
+        print("[SessionManager] connecting to \(url)")
         webSocket = urlSession.webSocketTask(with: url)
         webSocket?.resume()
         receive()
@@ -34,12 +35,17 @@ class SessionManager: ObservableObject {
             switch result {
             case .success(let message):
                 if case .string(let text) = message {
+                    print("[SessionManager] message: \(text.prefix(120))")
                     self.handleMessage(text)
                 }
                 self.receive()
-            case .failure:
+            case .failure(let error):
+                print("[SessionManager] connection error: \(error)")
                 DispatchQueue.main.async { self.connected = false }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.connect() }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    print("[SessionManager] reconnecting...")
+                    self.connect()
+                }
             }
         }
     }
