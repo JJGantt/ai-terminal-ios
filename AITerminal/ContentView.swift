@@ -1,8 +1,16 @@
 import SwiftUI
 
+extension UIApplication {
+    func endEditing() {
+        sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
 struct ContentView: View {
     @EnvironmentObject var sessionManager: SessionManager
+    @StateObject private var voice = VoiceRecorder()
     @State private var showKeypad = false
+    @State private var keyboardVisible = false
 
     var activeTab: TabInfo? {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
@@ -14,7 +22,7 @@ struct ContentView: View {
 
             if let tabId = sessionManager.activeTabId {
                 TerminalHostView(tabId: tabId)
-                    .id(tabId) // force new view on tab switch (replays scrollback)
+                    .id(tabId)
                     .ignoresSafeArea(edges: .bottom)
             } else {
                 placeholderView
@@ -23,6 +31,20 @@ struct ContentView: View {
         .background(.black)
         .overlay(alignment: .bottomTrailing) {
             controlOverlay
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
+        }
+        .onAppear {
+            voice.requestPermission { granted in
+                print("[Voice] microphone permission: \(granted)")
+            }
+            voice.onComplete = { data, duration in
+                sessionManager.sendVoice(audioData: data, durationS: duration)
+            }
         }
     }
 
@@ -100,21 +122,72 @@ struct ContentView: View {
                     .transition(.scale.combined(with: .opacity))
                 }
 
-                // Keypad toggle
-                Button {
-                    withAnimation(.spring(duration: 0.25)) { showKeypad.toggle() }
-                } label: {
-                    Image(systemName: showKeypad ? "keyboard.chevron.compact.down" : "keyboard")
-                        .font(.system(size: 18))
-                        .frame(width: 48, height: 48)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .foregroundStyle(.primary)
-                }
+                // Voice button
+                voiceButton
+
+                // Keyboard / dismiss button
+                keyboardButton
             }
             .padding(.trailing, 16)
             .padding(.bottom, 24)
         }
         .animation(.spring(duration: 0.2), value: activeTab?.working)
+        .animation(.spring(duration: 0.2), value: keyboardVisible)
+        .animation(.spring(duration: 0.2), value: voice.state == .idle)
+    }
+
+    // MARK: — Voice button
+
+    @ViewBuilder
+    var voiceButton: some View {
+        switch voice.state {
+        case .idle:
+            Button {
+                voice.start()
+            } label: {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.primary)
+                    .frame(width: 48, height: 48)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+
+        case .recording:
+            Button {
+                voice.stop()
+            } label: {
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 18))
+                    .foregroundStyle(.red)
+                    .frame(width: 48, height: 48)
+                    .background(Color.red.opacity(0.2), in: Circle())
+            }
+            .symbolEffect(.pulse, isActive: true)
+
+        case .transcribing:
+            ProgressView()
+                .frame(width: 48, height: 48)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+    }
+
+    // MARK: — Keyboard / dismiss button
+
+    var keyboardButton: some View {
+        Button {
+            if keyboardVisible {
+                UIApplication.shared.endEditing()
+                showKeypad = false
+            } else {
+                withAnimation(.spring(duration: 0.25)) { showKeypad.toggle() }
+            }
+        } label: {
+            Image(systemName: keyboardVisible ? "keyboard.chevron.compact.down" : (showKeypad ? "keyboard.chevron.compact.down" : "keyboard"))
+                .font(.system(size: 18))
+                .frame(width: 48, height: 48)
+                .background(.ultraThinMaterial, in: Circle())
+                .foregroundStyle(keyboardVisible ? .secondary : .primary)
+        }
     }
 }
 
