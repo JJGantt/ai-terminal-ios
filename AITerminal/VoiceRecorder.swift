@@ -31,14 +31,15 @@ class VoiceRecorder: ObservableObject {
             AVLinearPCMIsBigEndianKey: false,
         ]
         do {
+            // Feedback before audio session activates (session mutes output)
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            AudioServicesPlaySystemSound(1113) // JBL_Begin
             try AVAudioSession.sharedInstance().setCategory(.record, mode: .default, options: .duckOthers)
             try AVAudioSession.sharedInstance().setActive(true)
             recorder = try AVAudioRecorder(url: fileURL, settings: settings)
             recorder?.record()
             startTime = Date()
             state = .recording
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            AudioServicesPlaySystemSound(1113) // JBL_Begin
         } catch {
             print("[VoiceRecorder] start error: \(error)")
         }

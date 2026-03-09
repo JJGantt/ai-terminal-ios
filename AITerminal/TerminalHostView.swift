@@ -42,7 +42,6 @@ struct TerminalHostView: UIViewRepresentable {
 
     static func dismantleUIView(_ uiView: TerminalView, coordinator: Coordinator) {
         coordinator.sessionManager.onData.removeValue(forKey: coordinator.tabId)
-        coordinator.sessionManager.focusTerminal = nil
     }
 
     func makeCoordinator() -> Coordinator {
