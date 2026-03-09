@@ -1,0 +1,113 @@
+import Foundation
+import Combine
+
+struct TabInfo: Identifiable, Codable, Equatable {
+    let id: String
+    var name: String
+    var working: Bool
+}
+
+class SessionManager: ObservableObject {
+    @Published var tabs: [TabInfo] = []
+    @Published var activeTabId: String?
+    @Published var connected = false
+
+    // Callbacks from TerminalHostView instances — fed when data arrives
+    var onData: [String: (String) -> Void] = [:]
+
+    private var webSocket: URLSessionWebSocketTask?
+    private let urlSession = URLSession(configuration: .default)
+
+    let macHost = "100.106.101.57"
+    let wsPort = 27183
+
+    func connect() {
+        guard let url = URL(string: "ws://\(macHost):\(wsPort)") else { return }
+        webSocket = urlSession.webSocketTask(with: url)
+        webSocket?.resume()
+        receive()
+    }
+
+    private func receive() {
+        webSocket?.receive { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let message):
+                if case .string(let text) = message {
+                    self.handleMessage(text)
+                }
+                self.receive()
+            case .failure:
+                DispatchQueue.main.async { self.connected = false }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.connect() }
+            }
+        }
+    }
+
+    private func handleMessage(_ text: String) {
+        guard
+            let data = text.data(using: .utf8),
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let type = json["type"] as? String
+        else { return }
+
+        DispatchQueue.main.async {
+            switch type {
+            case "sessions":
+                guard let rawTabs = json["tabs"] as? [[String: Any]] else { return }
+                let newTabs = rawTabs.compactMap { dict -> TabInfo? in
+                    guard let id = dict["id"] as? String, let name = dict["name"] as? String else { return nil }
+                    return TabInfo(id: id, name: name, working: dict["working"] as? Bool ?? false)
+                }
+                // Preserve active selection if still present
+                self.tabs = newTabs
+                if let active = self.activeTabId, !newTabs.contains(where: { $0.id == active }) {
+                    self.activeTabId = newTabs.first?.id
+                } else if self.activeTabId == nil {
+                    if let first = newTabs.first {
+                        self.subscribe(to: first.id)
+                    }
+                }
+                self.connected = true
+
+            case "scrollback", "data":
+                guard
+                    let tabId = json["tabId"] as? String,
+                    let chunk = json["data"] as? String
+                else { return }
+                self.onData[tabId]?(chunk)
+
+            default:
+                break
+            }
+        }
+    }
+
+    func subscribe(to tabId: String) {
+        activeTabId = tabId
+        send(["type": "subscribe", "tabId": tabId])
+    }
+
+    func sendInput(_ text: String) {
+        guard let tabId = activeTabId else { return }
+        send(["type": "input", "tabId": tabId, "data": text])
+    }
+
+    func stopActive() {
+        guard let tabId = activeTabId else { return }
+        // Ctrl+C
+        send(["type": "input", "tabId": tabId, "data": "\u{03}"])
+    }
+
+    func resize(tabId: String, cols: Int, rows: Int) {
+        send(["type": "resize", "tabId": tabId, "cols": cols, "rows": rows])
+    }
+
+    private func send(_ dict: [String: Any]) {
+        guard
+            let data = try? JSONSerialization.data(withJSONObject: dict),
+            let text = String(data: data, encoding: .utf8)
+        else { return }
+        webSocket?.send(.string(text)) { _ in }
+    }
+}

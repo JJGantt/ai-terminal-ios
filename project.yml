@@ -1,0 +1,37 @@
+name: AITerminal
+options:
+  bundleIdPrefix: com.jaredgantt
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15"
+
+packages:
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm
+    from: "1.2.0"
+
+targets:
+  AITerminal:
+    type: application
+    platform: iOS
+    sources:
+      - AITerminal/
+    dependencies:
+      - package: SwiftTerm
+        product: SwiftTerm
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jaredgantt.AITerminal
+        SWIFT_VERSION: "5.9"
+        IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+        UIUserInterfaceStyle: Dark
+    info:
+      path: AITerminal/Info.plist
+      properties:
+        CFBundleDisplayName: AI Terminal
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations: {}
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        NSLocalNetworkUsageDescription: Connects to your Mac over Tailscale to stream Claude sessions.
