@@ -13,6 +13,7 @@ struct ContentView: View {
     @EnvironmentObject var sessionManager: SessionManager
     @StateObject private var voice = VoiceRecorder()
     @State private var keyboardVisible = false
+    @State private var showSessions = false
 
     var activeTab: TabInfo? {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
@@ -25,14 +26,15 @@ struct ContentView: View {
             if let tabId = sessionManager.activeTabId {
                 TerminalHostView(tabId: tabId, voiceRecorder: voice)
                     .id(tabId)
-                    .ignoresSafeArea(edges: .bottom)
             } else {
                 placeholderView
             }
+
+            bottomBar
         }
         .background(.black)
-        .overlay(alignment: .bottomTrailing) {
-            controlOverlay
+        .sheet(isPresented: $showSessions) {
+            SessionsPanel(isPresented: $showSessions)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
@@ -111,35 +113,49 @@ struct ContentView: View {
         .background(.black)
     }
 
-    // MARK: — Control overlay
+    // MARK: — Bottom bar
 
-    var controlOverlay: some View {
-        VStack(alignment: .trailing, spacing: 10) {
-            HStack(spacing: 10) {
-                // Stop button — only when Claude is working
-                if activeTab?.working == true {
-                    Button(action: sessionManager.stopActive) {
-                        Image(systemName: "stop.fill")
-                            .font(.system(size: 18))
-                            .foregroundStyle(.red)
-                            .frame(width: 48, height: 48)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .transition(.scale.combined(with: .opacity))
+    var bottomBar: some View {
+        VStack(spacing: 0) {
+            Divider().opacity(0.3)
+            HStack(spacing: 0) {
+                // Sessions button
+                Button {
+                    showSessions = true
+                } label: {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
                 }
 
-                // Voice button
+                // Voice / transcribing button (center)
                 voiceButton
+                    .frame(maxWidth: .infinity)
 
                 // Keyboard / dismiss button
                 keyboardButton
+                    .frame(maxWidth: .infinity)
             }
-            .padding(.trailing, 16)
-            .padding(.bottom, 24)
+            .background(.black.opacity(0.85))
+            .overlay(alignment: .topLeading) {
+                // Stop button floats above the bar when Claude is working
+                if activeTab?.working == true {
+                    Button(action: sessionManager.stopActive) {
+                        Image(systemName: "stop.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.red)
+                            .frame(width: 36, height: 36)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .padding(.leading, 8)
+                    .offset(y: -44)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
+            .animation(.spring(duration: 0.2), value: activeTab?.working)
         }
-        .animation(.spring(duration: 0.2), value: activeTab?.working)
-        .animation(.spring(duration: 0.2), value: keyboardVisible)
-        .animation(.spring(duration: 0.2), value: voice.state == .idle)
     }
 
     // MARK: — Voice button
@@ -152,10 +168,10 @@ struct ContentView: View {
                 voice.start()
             } label: {
                 Image(systemName: "mic.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundStyle(.primary)
-                    .frame(width: 48, height: 48)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
             }
 
         case .recording:
@@ -163,17 +179,17 @@ struct ContentView: View {
                 voice.stop()
             } label: {
                 Image(systemName: "mic.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundStyle(.red)
-                    .frame(width: 48, height: 48)
-                    .background(Color.red.opacity(0.2), in: Circle())
+                    .frame(height: 52)
+                    .frame(maxWidth: .infinity)
             }
             .symbolEffect(.pulse, isActive: true)
 
         case .transcribing:
             ProgressView()
-                .frame(width: 48, height: 48)
-                .background(.ultraThinMaterial, in: Circle())
+                .frame(height: 52)
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -188,10 +204,10 @@ struct ContentView: View {
             }
         } label: {
             Image(systemName: keyboardVisible ? "keyboard.chevron.compact.down" : "keyboard")
-                .font(.system(size: 18))
-                .frame(width: 48, height: 48)
-                .background(.ultraThinMaterial, in: Circle())
+                .font(.system(size: 20))
                 .foregroundStyle(.primary)
+                .frame(height: 52)
+                .frame(maxWidth: .infinity)
         }
     }
 }

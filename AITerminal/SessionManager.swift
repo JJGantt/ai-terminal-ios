@@ -7,10 +7,17 @@ struct TabInfo: Identifiable, Codable, Equatable {
     var working: Bool
 }
 
+struct HistorySession: Identifiable, Decodable {
+    let id: String
+    let title: String
+    let timestamp: String
+}
+
 class SessionManager: ObservableObject {
     @Published var tabs: [TabInfo] = []
     @Published var activeTabId: String?
     @Published var connected = false
+    @Published var historySessions: [HistorySession] = []
 
     // Callbacks from TerminalHostView instances — fed when data arrives
     var onData: [String: (String) -> Void] = [:]
@@ -90,6 +97,18 @@ class SessionManager: ObservableObject {
                 else { return }
                 self.onData[tabId]?(chunk)
 
+            case "tab_created":
+                guard let tabId = json["tabId"] as? String else { return }
+                self.subscribe(to: tabId)
+
+            case "history":
+                guard
+                    let rawSessions = json["sessions"] as? [[String: Any]],
+                    let data = try? JSONSerialization.data(withJSONObject: rawSessions),
+                    let sessions = try? JSONDecoder().decode([HistorySession].self, from: data)
+                else { return }
+                self.historySessions = sessions
+
             default:
                 break
             }
@@ -121,6 +140,18 @@ class SessionManager: ObservableObject {
 
     func resize(tabId: String, cols: Int, rows: Int) {
         send(["type": "resize", "tabId": tabId, "cols": cols, "rows": rows])
+    }
+
+    func newTab() {
+        send(["type": "new_tab"])
+    }
+
+    func resumeTab(sessionId: String) {
+        send(["type": "resume_tab", "sessionId": sessionId])
+    }
+
+    func requestHistory() {
+        send(["type": "history_request"])
     }
 
     func sendVoice(audioData: Data, durationS: Double) {
