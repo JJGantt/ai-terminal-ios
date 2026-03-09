@@ -11,6 +11,7 @@
 		1F93B5BF454D4C059150F85D /* KeypadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06010347D118175D67C9A554 /* KeypadView.swift */; };
 		4861BD5C6D7EA8435BCCCB5F /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 3A075DBB2435A00A0DCF0A7F /* SwiftTerm */; };
 		948336ED425D2326217C0A5A /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */; };
+		99ED38B1CADAE824C8D08D19 /* HostConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914C64C99A9E16C168C7A2A4 /* HostConnection.swift */; };
 		B7F0F4D2F23A15093D211C2F /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAFE3125AAD84C20BFD1A9F /* SessionManager.swift */; };
 		B9FAA24F97B5670A43106256 /* SessionsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6737578460D11EBD02879079 /* SessionsPanel.swift */; };
 		C59C73B0D5A9F0A3048A4213 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E76DC3A35B533D7D16E96E99 /* Assets.xcassets */; };
@@ -26,6 +27,7 @@
 		1A8F4C7DC8CB5D22DE78F406 /* AITerminal.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = AITerminal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		227C3C8EBA63C80934613211 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		6737578460D11EBD02879079 /* SessionsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsPanel.swift; sourceTree = "<group>"; };
+		914C64C99A9E16C168C7A2A4 /* HostConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostConnection.swift; sourceTree = "<group>"; };
 		937E920F550E59346755AC74 /* TerminalHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalHostView.swift; sourceTree = "<group>"; };
 		95CD165BDEBA79F803AC71ED /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
@@ -68,6 +70,7 @@
 				E76DC3A35B533D7D16E96E99 /* Assets.xcassets */,
 				EEA91078BB65775B4C47586E /* ClaudeSettingsPanel.swift */,
 				95CD165BDEBA79F803AC71ED /* ContentView.swift */,
+				914C64C99A9E16C168C7A2A4 /* HostConnection.swift */,
 				0A702D677679FCCCD80B797D /* Info.plist */,
 				06010347D118175D67C9A554 /* KeypadView.swift */,
 				0DAFE3125AAD84C20BFD1A9F /* SessionManager.swift */,
@@ -109,6 +112,12 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1500;
+				TargetAttributes = {
+					E885AEC3AF4166C8AF6848FD = {
+						DevelopmentTeam = XMH4AVFC78;
+						ProvisioningStyle = Automatic;
+					};
+				};
 			};
 			buildConfigurationList = 2CB818ABFE2AEF238E798A01 /* Build configuration list for PBXProject "AITerminal" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -151,6 +160,7 @@
 				14BD7272074FEA494B4780B1 /* App.swift in Sources */,
 				C7A0A8D0E4DCCA706F878529 /* ClaudeSettingsPanel.swift in Sources */,
 				FFCA456B1C24E4E325CA0B32 /* ContentView.swift in Sources */,
+				99ED38B1CADAE824C8D08D19 /* HostConnection.swift in Sources */,
 				1F93B5BF454D4C059150F85D /* KeypadView.swift in Sources */,
 				B7F0F4D2F23A15093D211C2F /* SessionManager.swift in Sources */,
 				B9FAA24F97B5670A43106256 /* SessionsPanel.swift in Sources */,
@@ -167,6 +177,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XMH4AVFC78;
 				INFOPLIST_FILE = AITerminal/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -305,6 +317,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XMH4AVFC78;
 				INFOPLIST_FILE = AITerminal/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (

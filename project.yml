@@ -25,6 +25,8 @@ targets:
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         UIUserInterfaceStyle: Dark
+        DEVELOPMENT_TEAM: XMH4AVFC78
+        CODE_SIGN_STYLE: Automatic
     info:
       path: AITerminal/Info.plist
       properties:
