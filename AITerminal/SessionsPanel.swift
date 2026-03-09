@@ -3,47 +3,40 @@ import SwiftUI
 struct SessionsPanel: View {
     @EnvironmentObject var sessionManager: SessionManager
     @Binding var isPresented: Bool
-    @State private var selectedHost = "mac"
-
-    private var hostOnline: Bool {
-        selectedHost == "pi" ? sessionManager.piConnected : sessionManager.macConnected
-    }
-
-    private var filteredHistory: [HistorySession] {
-        sessionManager.historySessions.filter { $0.host == selectedHost }
-    }
 
     var body: some View {
         NavigationView {
             List {
-                // Host picker
-                Section {
-                    Picker("Host", selection: $selectedHost) {
-                        Text("⌘  Mac").tag("mac")
-                        Text("π  Pi").tag("pi")
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                }
-
-                // New session
-                Section {
+                // New session buttons
+                Section("New Session") {
                     Button {
-                        sessionManager.newTab(on: selectedHost)
+                        sessionManager.newTab(on: "mac")
                         isPresented = false
                     } label: {
-                        Label("New Session on \(selectedHost == "pi" ? "Pi" : "Mac")",
-                              systemImage: "plus.circle.fill")
+                        Label("Mac  ⌘", systemImage: "plus.circle.fill")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(hostOnline ? .blue : .secondary)
+                            .foregroundStyle(sessionManager.macConnected ? .blue : .secondary)
                     }
-                    .disabled(!hostOnline)
+                    .disabled(!sessionManager.macConnected)
+
+                    Button {
+                        sessionManager.newTab(on: "pi")
+                        isPresented = false
+                    } label: {
+                        Label("Pi  π", systemImage: "plus.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(sessionManager.piConnected ? .blue : .secondary)
+                    }
+                    .disabled(!sessionManager.piConnected)
                 }
 
-                // Recent sessions
-                if !filteredHistory.isEmpty {
+                // All recent sessions mixed together
+                if !sessionManager.historySessions.isEmpty {
                     Section("Recent") {
-                        ForEach(filteredHistory) { session in
+                        ForEach(sessionManager.historySessions) { session in
+                            let online = session.host == "pi"
+                                ? sessionManager.piConnected
+                                : sessionManager.macConnected
                             Button {
                                 sessionManager.resumeTab(sessionId: session.id, host: session.host)
                                 isPresented = false
@@ -65,8 +58,8 @@ struct SessionsPanel: View {
                                 }
                                 .padding(.vertical, 2)
                             }
-                            .disabled(!hostOnline)
-                            .opacity(hostOnline ? 1.0 : 0.5)
+                            .disabled(!online)
+                            .opacity(online ? 1.0 : 0.5)
                         }
                     }
                 } else {

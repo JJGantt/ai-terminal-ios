@@ -68,9 +68,18 @@ class SessionManager: ObservableObject {
         mac.onData = { [weak self] tabId, chunk in self?.onData[tabId]?(chunk) }
         pi.onData  = { [weak self] tabId, chunk in self?.onData[tabId]?(chunk) }
 
-        // Auto-subscribe when phone creates a new tab
-        mac.onTabCreated = { [weak self] tabId in self?.subscribe(to: tabId) }
-        pi.onTabCreated  = { [weak self] tabId in self?.subscribe(to: tabId) }
+        // Auto-subscribe when phone creates a new tab.
+        // Use the connection directly — don't go through connection(for:) because
+        // the tab won't be in .tabs yet when tab_created fires (sessions broadcast
+        // arrives after).
+        mac.onTabCreated = { [weak self] (tabId: String) in
+            self?.activeTabId = tabId
+            self?.mac.subscribe(to: tabId)
+        }
+        pi.onTabCreated = { [weak self] (tabId: String) in
+            self?.activeTabId = tabId
+            self?.pi.subscribe(to: tabId)
+        }
 
         mac.connect()
         pi.connect()
