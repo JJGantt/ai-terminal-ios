@@ -8,7 +8,6 @@ struct AITerminalApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(sessionManager)
-                .onAppear { sessionManager.connect() }
                 .preferredColorScheme(.dark)
         }
     }

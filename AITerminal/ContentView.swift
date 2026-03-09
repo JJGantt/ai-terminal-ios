@@ -20,6 +20,10 @@ struct ContentView: View {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
     }
 
+    func isOnline(_ tab: TabInfo) -> Bool {
+        tab.host == "pi" ? sessionManager.piConnected : sessionManager.macConnected
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             tabStrip
@@ -62,13 +66,16 @@ struct ContentView: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    connectionDot
+                    connectionDots
 
                     ForEach(sessionManager.tabs) { tab in
                         TabChip(
                             tab: tab,
                             isActive: tab.id == sessionManager.activeTabId,
-                            onTap: { sessionManager.subscribe(to: tab.id) }
+                            isOnline: isOnline(tab),
+                            onTap: {
+                                if isOnline(tab) { sessionManager.subscribe(to: tab.id) }
+                            }
                         )
                         .id(tab.id)
                     }
@@ -96,11 +103,17 @@ struct ContentView: View {
         }
     }
 
-    var connectionDot: some View {
-        Circle()
-            .fill(sessionManager.connected ? .green : .orange)
-            .frame(width: 7, height: 7)
-            .padding(.leading, 4)
+    // Two small dots — one for Mac, one for Pi
+    var connectionDots: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(sessionManager.macConnected ? Color.green : Color.orange)
+                .frame(width: 6, height: 6)
+            Circle()
+                .fill(sessionManager.piConnected ? Color.green : Color.orange)
+                .frame(width: 6, height: 6)
+        }
+        .padding(.leading, 4)
     }
 
     // MARK: — Placeholder
@@ -110,7 +123,7 @@ struct ContentView: View {
             Image(systemName: "desktopcomputer")
                 .font(.system(size: 52))
                 .foregroundStyle(.secondary)
-            Text(sessionManager.connected ? "No open sessions on Mac" : "Connecting to Mac…")
+            Text(sessionManager.connected ? "No open sessions" : "Connecting…")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -123,7 +136,6 @@ struct ContentView: View {
         VStack(spacing: 0) {
             Divider().opacity(0.3)
             HStack(spacing: 0) {
-                // Sessions
                 Button { showSessions = true } label: {
                     Image(systemName: "list.bullet")
                         .font(.system(size: 20))
@@ -132,15 +144,12 @@ struct ContentView: View {
                         .frame(height: 52)
                 }
 
-                // Voice / transcribing
                 voiceButton
                     .frame(maxWidth: .infinity)
 
-                // Keyboard / dismiss
                 keyboardButton
                     .frame(maxWidth: .infinity)
 
-                // Claude settings
                 Button { showClaudeSettings = true } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 20))
@@ -174,9 +183,7 @@ struct ContentView: View {
     var voiceButton: some View {
         switch voice.state {
         case .idle:
-            Button {
-                voice.start()
-            } label: {
+            Button { voice.start() } label: {
                 Image(systemName: "mic.fill")
                     .font(.system(size: 20))
                     .foregroundStyle(.primary)
@@ -185,9 +192,7 @@ struct ContentView: View {
             }
 
         case .recording:
-            Button {
-                voice.stop()
-            } label: {
+            Button { voice.stop() } label: {
                 Image(systemName: "mic.fill")
                     .font(.system(size: 20))
                     .foregroundStyle(.red)
@@ -203,7 +208,7 @@ struct ContentView: View {
         }
     }
 
-    // MARK: — Keyboard / dismiss button
+    // MARK: — Keyboard button
 
     var keyboardButton: some View {
         Button {
@@ -227,12 +232,15 @@ struct ContentView: View {
 struct TabChip: View {
     let tab: TabInfo
     let isActive: Bool
+    let isOnline: Bool
     let onTap: () -> Void
+
+    private var hostBadge: String { tab.host == "pi" ? "π" : "⌘" }
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 5) {
-                if tab.working {
+            HStack(spacing: 4) {
+                if tab.working && isOnline {
                     Circle()
                         .fill(.green)
                         .frame(width: 6, height: 6)
@@ -240,12 +248,25 @@ struct TabChip: View {
                 Text(tab.name)
                     .font(.system(size: 12, weight: .medium))
                     .lineLimit(1)
+                Text(hostBadge)
+                    .font(.system(size: 9, weight: .semibold))
+                    .opacity(0.6)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isActive ? Color.blue : Color(.systemGray6), in: Capsule())
-            .foregroundStyle(isActive ? .white : .primary)
+            .background(chipBackground, in: Capsule())
+            .foregroundStyle(chipForeground)
+            .opacity(isOnline ? 1.0 : 0.4)
         }
         .buttonStyle(.plain)
+        .disabled(!isOnline)
+    }
+
+    private var chipBackground: Color {
+        isActive && isOnline ? .blue : Color(.systemGray6)
+    }
+
+    private var chipForeground: Color {
+        isActive && isOnline ? .white : .primary
     }
 }

@@ -3,39 +3,70 @@ import SwiftUI
 struct SessionsPanel: View {
     @EnvironmentObject var sessionManager: SessionManager
     @Binding var isPresented: Bool
+    @State private var selectedHost = "mac"
+
+    private var hostOnline: Bool {
+        selectedHost == "pi" ? sessionManager.piConnected : sessionManager.macConnected
+    }
+
+    private var filteredHistory: [HistorySession] {
+        sessionManager.historySessions.filter { $0.host == selectedHost }
+    }
 
     var body: some View {
         NavigationView {
             List {
+                // Host picker
                 Section {
-                    Button {
-                        sessionManager.newTab()
-                        isPresented = false
-                    } label: {
-                        Label("New Session", systemImage: "plus.circle.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.blue)
+                    Picker("Host", selection: $selectedHost) {
+                        Text("⌘  Mac").tag("mac")
+                        Text("π  Pi").tag("pi")
                     }
+                    .pickerStyle(.segmented)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                 }
 
-                if !sessionManager.historySessions.isEmpty {
-                    Section("Recent Sessions") {
-                        ForEach(sessionManager.historySessions) { session in
+                // New session
+                Section {
+                    Button {
+                        sessionManager.newTab(on: selectedHost)
+                        isPresented = false
+                    } label: {
+                        Label("New Session on \(selectedHost == "pi" ? "Pi" : "Mac")",
+                              systemImage: "plus.circle.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(hostOnline ? .blue : .secondary)
+                    }
+                    .disabled(!hostOnline)
+                }
+
+                // Recent sessions
+                if !filteredHistory.isEmpty {
+                    Section("Recent") {
+                        ForEach(filteredHistory) { session in
                             Button {
-                                sessionManager.resumeTab(sessionId: session.id)
+                                sessionManager.resumeTab(sessionId: session.id, host: session.host)
                                 isPresented = false
                             } label: {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(session.title)
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundStyle(.primary)
-                                        .lineLimit(2)
-                                    Text(formattedDate(session.timestamp))
-                                        .font(.caption)
+                                HStack(spacing: 10) {
+                                    Text(session.host == "pi" ? "π" : "⌘")
+                                        .font(.system(size: 13, weight: .semibold))
                                         .foregroundStyle(.secondary)
+                                        .frame(width: 18)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(session.title)
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(2)
+                                        Text(formattedDate(session.timestamp))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                                 .padding(.vertical, 2)
                             }
+                            .disabled(!hostOnline)
+                            .opacity(hostOnline ? 1.0 : 0.5)
                         }
                     }
                 } else {
@@ -63,7 +94,6 @@ struct SessionsPanel: View {
         if let date = formatter.date(from: iso) {
             return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
         }
-        // fallback: try without fractional seconds
         formatter.formatOptions = [.withInternetDateTime]
         if let date = formatter.date(from: iso) {
             return RelativeDateTimeFormatter().localizedString(for: date, relativeTo: Date())
