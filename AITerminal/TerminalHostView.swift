@@ -26,6 +26,13 @@ struct TerminalHostView: UIViewRepresentable {
             view?.becomeFirstResponder()
         }
 
+        // Any touch = reclaim terminal dimensions for phone
+        let touch = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleAnyTouch(_:)))
+        touch.minimumPressDuration = 0
+        touch.cancelsTouchesInView = false
+        touch.delegate = context.coordinator
+        view.addGestureRecognizer(touch)
+
         // Tap = start/stop recording (also prevents terminal auto-focus)
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
         tap.cancelsTouchesInView = true
@@ -121,6 +128,17 @@ struct TerminalHostView: UIViewRepresentable {
             case .idle:        voiceRecorder.start()
             case .recording:   voiceRecorder.stop()
             case .transcribing: break
+            }
+        }
+
+        @objc func handleAnyTouch(_ gesture: UILongPressGestureRecognizer) {
+            guard gesture.state == .began else { return }
+            // Force-send phone dimensions on any touch to reclaim from Mac
+            guard let view = gesture.view as? TerminalView else { return }
+            let cols = view.getTerminal().cols
+            let rows = view.getTerminal().rows
+            if cols > 0 && rows > 0 {
+                sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
             }
         }
 
