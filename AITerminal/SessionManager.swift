@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 struct TabInfo: Identifiable, Equatable {
     let id: String
