@@ -26,25 +26,10 @@ struct TerminalHostView: UIViewRepresentable {
             view?.becomeFirstResponder()
         }
 
-        // Tap = start/stop recording + reclaim phone dimensions
+        // Bare tap recognizer — cancels touches so SwiftTerm doesn't auto-show keyboard
         let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         tap.cancelsTouchesInView = true
         view.addGestureRecognizer(tap)
-
-        // Long press = toggle transcript view
-        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
-        longPress.minimumPressDuration = 0.6
-        longPress.cancelsTouchesInView = false
-        view.addGestureRecognizer(longPress)
-
-        // Swipe left/right = switch tabs
-        let swipeLeft = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleSwipeLeft))
-        swipeLeft.direction = .left
-        view.addGestureRecognizer(swipeLeft)
-
-        let swipeRight = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleSwipeRight))
-        swipeRight.direction = .right
-        view.addGestureRecognizer(swipeRight)
 
         // Pinch to zoom = change font size
         let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
@@ -117,7 +102,7 @@ struct TerminalHostView: UIViewRepresentable {
         }
 
         @objc func handleTap(_ gesture: UITapGestureRecognizer) {
-            // Reclaim phone dimensions on tap
+            // Reclaim phone dimensions when terminal is touched
             if let view = gesture.view as? TerminalView {
                 let cols = view.getTerminal().cols
                 let rows = view.getTerminal().rows
@@ -125,21 +110,7 @@ struct TerminalHostView: UIViewRepresentable {
                     sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
                 }
             }
-            // Voice toggle
-            switch voiceRecorder.state {
-            case .idle:        voiceRecorder.start()
-            case .recording:   voiceRecorder.stop()
-            case .transcribing: break
-            }
         }
-
-        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-            guard gesture.state == .began else { return }
-            DispatchQueue.main.async { self.sessionManager.toggleTranscript() }
-        }
-
-        @objc func handleSwipeLeft()  { sessionManager.switchTab(delta: 1) }
-        @objc func handleSwipeRight() { sessionManager.switchTab(delta: -1) }
 
         @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
             guard let view = pinch.view as? TerminalView else { return }
