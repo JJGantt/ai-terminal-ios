@@ -43,28 +43,23 @@ private struct MarkdownMessage: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         Text(block.content)
                             .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(Color(.systemGray2))
+                            .foregroundStyle(Color(UIColor.systemGray2))
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 6))
                 } else if !block.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text(attributed(block.content, isUser: isUser))
+                    Text(attributed(block.content))
                         .font(.system(size: 13))
+                        .foregroundStyle(isUser ? Color.white : Color(UIColor.systemGray))
                 }
             }
         }
     }
 
-    private func attributed(_ raw: String, isUser: Bool) -> AttributedString {
+    private func attributed(_ raw: String) -> AttributedString {
         let opts = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlinesOnlyPreservingWhitespace)
-        if var a = try? AttributedString(markdown: raw, options: opts) {
-            a.foregroundColor = isUser ? .white : .systemGray
-            return a
-        }
-        var a = AttributedString(raw)
-        a.foregroundColor = isUser ? .white : .systemGray
-        return a
+        return (try? AttributedString(markdown: raw, options: opts)) ?? AttributedString(raw)
     }
 }
 
