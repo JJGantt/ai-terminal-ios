@@ -39,7 +39,7 @@ struct ContentView: View {
         }
         .background(.black)
         .sheet(isPresented: $showSessions) {
-            SessionsPanel(isPresented: $showSessions)
+            SessionsPanel(voice: voice, isPresented: $showSessions)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true

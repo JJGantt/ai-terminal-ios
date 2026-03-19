@@ -13,6 +13,7 @@ private let modelOptions: [ModelOption] = [
 
 struct SessionsPanel: View {
     @EnvironmentObject var sessionManager: SessionManager
+    @ObservedObject var voice: VoiceRecorder
     @Binding var isPresented: Bool
     @State private var confirmCloseAll = false
 
@@ -153,6 +154,19 @@ struct SessionsPanel: View {
                         Label("Browse All Models…", systemImage: "chevron.right")
                             .foregroundStyle(.secondary)
                             .font(.system(size: 14))
+                    }
+                }
+
+                Section("Voice") {
+                    Toggle("Auto-stop on silence", isOn: $voice.autoStopEnabled)
+                    if voice.autoStopEnabled {
+                        HStack {
+                            Text("Silence duration")
+                            Spacer()
+                            Text("\(String(format: "%.1f", voice.autoStopSeconds))s")
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(value: $voice.autoStopSeconds, in: 1.0...6.0, step: 0.5)
                     }
                 }
             }
