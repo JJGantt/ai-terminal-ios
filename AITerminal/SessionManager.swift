@@ -147,7 +147,12 @@ class SessionManager: ObservableObject {
 
     func subscribe(to tabId: String) {
         activeTabId = tabId
-        connection(for: tabId)?.subscribe(to: tabId)
+        let conn = connection(for: tabId)
+        conn?.subscribe(to: tabId)
+        // Always re-send phone dimensions so PTY resizes back from Mac dimensions
+        if lastCols > 0 && lastRows > 0 {
+            conn?.resize(tabId: tabId, cols: lastCols, rows: lastRows)
+        }
     }
 
     func sendInput(_ text: String) {

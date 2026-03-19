@@ -45,9 +45,9 @@ struct TerminalHostView: UIViewRepresentable {
             }
         }
 
-        // Re-send resize when app becomes active (returning from background)
+        // Re-send resize when app becomes active (returning from background or app switcher)
         context.coordinator.foregroundObserver = NotificationCenter.default.addObserver(
-            forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak view] _ in
             guard let view else { return }
             let cols = view.getTerminal().cols
