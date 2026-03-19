@@ -45,6 +45,17 @@ struct TerminalHostView: UIViewRepresentable {
         pan.delegate = context.coordinator
         view.addGestureRecognizer(pan)
 
+        // Pinch to zoom = change font size
+        let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
+        pinch.delegate = context.coordinator
+        view.addGestureRecognizer(pinch)
+
+        // Apply saved font size
+        let savedSize = UserDefaults.standard.double(forKey: "terminalFontSize")
+        if savedSize > 0 {
+            view.font = UIFont.monospacedSystemFont(ofSize: savedSize, weight: .regular)
+        }
+
         // Send initial resize once layout is known
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak view] in
             guard let view else { return }
@@ -87,6 +98,7 @@ struct TerminalHostView: UIViewRepresentable {
         var foregroundObserver: NSObjectProtocol?
         private var panAccumulator: CGFloat = 0
         private let scrollThreshold: CGFloat = 20  // pixels per scroll line
+        private var pinchBaseFontSize: CGFloat = 0
 
         init(tabId: String, sessionManager: SessionManager, voiceRecorder: VoiceRecorder) {
             self.tabId = tabId
@@ -115,6 +127,22 @@ struct TerminalHostView: UIViewRepresentable {
 
         @objc func handleSwipeLeft()  { sessionManager.switchTab(delta: 1) }
         @objc func handleSwipeRight() { sessionManager.switchTab(delta: -1) }
+
+        @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
+            guard let view = pinch.view as? TerminalView else { return }
+            switch pinch.state {
+            case .began:
+                pinchBaseFontSize = view.font.pointSize
+            case .changed:
+                let newSize = min(max(pinchBaseFontSize * pinch.scale, 6), 32)
+                view.font = UIFont.monospacedSystemFont(ofSize: newSize, weight: .regular)
+            case .ended, .cancelled:
+                let finalSize = view.font.pointSize
+                UserDefaults.standard.set(finalSize, forKey: "terminalFontSize")
+                // sizeChanged delegate fires automatically → sends resize to server
+            default: break
+            }
+        }
 
         @objc func handlePan(_ pan: UIPanGestureRecognizer) {
             let translation = pan.translation(in: pan.view)
