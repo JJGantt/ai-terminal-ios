@@ -59,6 +59,11 @@ class SessionManager: ObservableObject {
     private var scrollbackCache: [String: String] = [:]
     private let maxScrollback = 100 * 1024  // 100KB per tab
 
+    /// Scroll lock — shows frozen scrollable view instead of live terminal.
+    @Published var scrollLockActive = false
+    /// Tracks which tabs are in alternate buffer mode (TUI).
+    private(set) var isInAltBuffer: [String: Bool] = [:]
+
     /// Pending action from URL scheme launch.
     @Published var pendingAction: LaunchAction?
 
@@ -282,10 +287,68 @@ class SessionManager: ObservableObject {
             buf = String(buf.suffix(maxScrollback))
         }
         scrollbackCache[tabId] = buf
+
+        // Track alt buffer state
+        if chunk.contains("\u{1b}[?1049h") || chunk.contains("\u{1b}[?47h") || chunk.contains("\u{1b}[?1047h") {
+            isInAltBuffer[tabId] = true
+        }
+        if chunk.contains("\u{1b}[?1049l") || chunk.contains("\u{1b}[?47l") || chunk.contains("\u{1b}[?1047l") {
+            isInAltBuffer[tabId] = false
+        }
     }
 
     /// Returns cached scrollback for a tab (used by TerminalHostView on creation).
     func getCachedScrollback(for tabId: String) -> String? {
         scrollbackCache[tabId]
+    }
+
+    /// Returns scrollback with alt-buffer content stripped (for scroll lock view).
+    func getStrippedScrollback(for tabId: String) -> String? {
+        guard let raw = scrollbackCache[tabId] else { return nil }
+        return Self.stripAltBuffer(raw)
+    }
+
+    /// Strips alternate buffer escape codes and all content rendered inside the alt buffer.
+    static func stripAltBuffer(_ raw: String) -> String {
+        let altEnter = ["\u{1b}[?1049h", "\u{1b}[?47h", "\u{1b}[?1047h"]
+        let altExit  = ["\u{1b}[?1049l", "\u{1b}[?47l", "\u{1b}[?1047l"]
+
+        var result = ""
+        var inAlt = false
+        var i = raw.startIndex
+
+        while i < raw.endIndex {
+            let remaining = raw[i...]
+
+            // Check for alt-buffer enter
+            var matched = false
+            for seq in altEnter {
+                if remaining.hasPrefix(seq) {
+                    inAlt = true
+                    i = raw.index(i, offsetBy: seq.count)
+                    matched = true
+                    break
+                }
+            }
+            if matched { continue }
+
+            // Check for alt-buffer exit
+            for seq in altExit {
+                if remaining.hasPrefix(seq) {
+                    inAlt = false
+                    i = raw.index(i, offsetBy: seq.count)
+                    matched = true
+                    break
+                }
+            }
+            if matched { continue }
+
+            // Keep character only if in normal buffer
+            if !inAlt {
+                result.append(raw[i])
+            }
+            i = raw.index(after: i)
+        }
+        return result
     }
 }

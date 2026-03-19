@@ -11,6 +11,7 @@
 		1F93B5BF454D4C059150F85D /* KeypadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06010347D118175D67C9A554 /* KeypadView.swift */; };
 		4861BD5C6D7EA8435BCCCB5F /* SwiftTerm in Frameworks */ = {isa = PBXBuildFile; productRef = 3A075DBB2435A00A0DCF0A7F /* SwiftTerm */; };
 		948336ED425D2326217C0A5A /* VoiceRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */; };
+		D1A2B3C4E5F60718293A4B5D /* FrozenTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A2B3C4E5F60718293A4B5C /* FrozenTerminalView.swift */; };
 		99ED38B1CADAE824C8D08D19 /* HostConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 914C64C99A9E16C168C7A2A4 /* HostConnection.swift */; };
 		B7F0F4D2F23A15093D211C2F /* SessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAFE3125AAD84C20BFD1A9F /* SessionManager.swift */; };
 		B9FAA24F97B5670A43106256 /* SessionsPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6737578460D11EBD02879079 /* SessionsPanel.swift */; };
@@ -31,6 +32,7 @@
 		937E920F550E59346755AC74 /* TerminalHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalHostView.swift; sourceTree = "<group>"; };
 		95CD165BDEBA79F803AC71ED /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceRecorder.swift; sourceTree = "<group>"; };
+		D1A2B3C4E5F60718293A4B5C /* FrozenTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrozenTerminalView.swift; sourceTree = "<group>"; };
 		E76DC3A35B533D7D16E96E99 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		EEA91078BB65775B4C47586E /* ClaudeSettingsPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeSettingsPanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -77,6 +79,7 @@
 				6737578460D11EBD02879079 /* SessionsPanel.swift */,
 				937E920F550E59346755AC74 /* TerminalHostView.swift */,
 				CADBF5CB2FC49E23AC8CB03D /* VoiceRecorder.swift */,
+				D1A2B3C4E5F60718293A4B5C /* FrozenTerminalView.swift */,
 			);
 			path = AITerminal;
 			sourceTree = "<group>";
@@ -166,6 +169,7 @@
 				B9FAA24F97B5670A43106256 /* SessionsPanel.swift in Sources */,
 				E253D41E1BCBDB226928624B /* TerminalHostView.swift in Sources */,
 				948336ED425D2326217C0A5A /* VoiceRecorder.swift in Sources */,
+				D1A2B3C4E5F60718293A4B5D /* FrozenTerminalView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

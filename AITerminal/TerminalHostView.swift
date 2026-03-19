@@ -40,6 +40,12 @@ struct TerminalHostView: UIViewRepresentable {
         swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
 
+        // Two-finger swipe down = enter scroll lock
+        let twoFingerSwipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleScrollLock))
+        twoFingerSwipe.direction = .down
+        twoFingerSwipe.numberOfTouchesRequired = 2
+        view.addGestureRecognizer(twoFingerSwipe)
+
         // Pinch to zoom = change font size
         let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
         pinch.delegate = context.coordinator
@@ -120,6 +126,7 @@ struct TerminalHostView: UIViewRepresentable {
 
         @objc func handleSwipeLeft()  { sessionManager.switchTab(delta: 1) }
         @objc func handleSwipeRight() { sessionManager.switchTab(delta: -1) }
+        @objc func handleScrollLock() { sessionManager.scrollLockActive = true }
 
         @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
             guard let view = pinch.view as? TerminalView else { return }
