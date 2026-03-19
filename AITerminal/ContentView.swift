@@ -36,6 +36,10 @@ struct ContentView: View {
 
                     if sessionManager.transcriptMode {
                         TranscriptView(messages: sessionManager.transcriptMessages)
+                            .simultaneousGesture(
+                                LongPressGesture(minimumDuration: 0.6)
+                                    .onEnded { _ in sessionManager.toggleTranscript() }
+                            )
                     }
                 }
             } else {
