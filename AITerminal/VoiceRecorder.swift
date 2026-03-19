@@ -21,14 +21,11 @@ class VoiceRecorder: ObservableObject {
     private var startTime: Date?
     private let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("phone-voice.wav")
 
-    // Silence detection
+    // Silence detection — peak-relative approach
     private var meteringTimer: Timer?
-    private var baselineSamples: [Float] = []
-    private var baseline: Float = -160
-    private var baselineEstablished = false
+    private var peakLevel: Float = -160
     private var silenceStart: Date?
-    private let baselineWindow: TimeInterval = 0.3  // seconds to sample baseline (before speech starts)
-    private let silenceMarginDB: Float = 15          // dB above baseline = still "silence"
+    private let silenceDropDB: Float = 20            // dB below peak = "silence"
     private let minRecordingTime: TimeInterval = 5   // don't auto-stop before this
 
     var onComplete: ((Data, Double) -> Void)?
@@ -61,9 +58,7 @@ class VoiceRecorder: ObservableObject {
             state = .recording
 
             // Reset silence detection state
-            baselineSamples = []
-            baseline = -160
-            baselineEstablished = false
+            peakLevel = -160
             silenceStart = nil
 
             // Start metering timer for silence detection
@@ -126,26 +121,22 @@ class VoiceRecorder: ObservableObject {
 
         let elapsed = -(startTime?.timeIntervalSinceNow ?? 0)
 
-        // Phase 1: Establish baseline from ambient noise
-        if !baselineEstablished {
-            baselineSamples.append(level)
-            if elapsed >= baselineWindow {
-                baseline = baselineSamples.reduce(0, +) / Float(baselineSamples.count)
-                baselineEstablished = true
-                print("[VoiceRecorder] baseline established: \(String(format: "%.1f", baseline)) dB (\(baselineSamples.count) samples)")
-            }
-            return
+        // Track the loudest level we've seen (speech)
+        if level > peakLevel {
+            peakLevel = level
         }
 
-        // Phase 2: Detect silence (level near baseline)
-        guard elapsed >= minRecordingTime else { return }  // don't auto-stop too early
-        let isSilent = level < (baseline + silenceMarginDB)
+        // Don't auto-stop before minimum recording time
+        guard elapsed >= minRecordingTime else { return }
+
+        // "Silence" = current level is significantly below the peak speech level
+        let isSilent = level < (peakLevel - silenceDropDB)
 
         if isSilent {
             if silenceStart == nil {
                 silenceStart = Date()
             } else if let start = silenceStart, Date().timeIntervalSince(start) >= autoStopSeconds {
-                print("[VoiceRecorder] auto-stop: \(String(format: "%.1f", autoStopSeconds))s silence detected")
+                print("[VoiceRecorder] auto-stop: peak=\(String(format: "%.1f", peakLevel))dB, current=\(String(format: "%.1f", level))dB, silent \(String(format: "%.1f", autoStopSeconds))s")
                 stop()
             }
         } else {
