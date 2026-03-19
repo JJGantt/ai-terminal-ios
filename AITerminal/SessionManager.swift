@@ -59,10 +59,13 @@ class SessionManager: ObservableObject {
     private var scrollbackCache: [String: String] = [:]
     private let maxScrollback = 100 * 1024  // 100KB per tab
 
-    /// Scroll lock — shows frozen scrollable view instead of live terminal.
-    @Published var scrollLockActive = false
     /// Tracks which tabs are in alternate buffer mode (TUI).
     private(set) var isInAltBuffer: [String: Bool] = [:]
+
+    /// Transcript view — clean text-only output from JSONL.
+    @Published var transcriptMode = false
+    @Published var transcriptMessages: [[String: String]] = []
+    private var transcriptTabId: String?
 
     /// Pending action from URL scheme launch.
     @Published var pendingAction: LaunchAction?
@@ -133,6 +136,14 @@ class SessionManager: ObservableObject {
         pi.onData = { [weak self] tabId, chunk in
             self?.appendScrollback(tabId: tabId, chunk: chunk)
             self?.onData[tabId]?(chunk)
+        }
+
+        // Route transcript data
+        mac.onTranscript = { [weak self] _, msgs in
+            DispatchQueue.main.async { self?.transcriptMessages = msgs }
+        }
+        pi.onTranscript = { [weak self] _, msgs in
+            DispatchQueue.main.async { self?.transcriptMessages = msgs }
         }
 
         // Re-subscribe active tab after reconnect so data flows again
@@ -276,6 +287,21 @@ class SessionManager: ObservableObject {
 
     func regenerateName(sessionId: String, host: String) {
         connection(forHost: host).regenerateName(sessionId: sessionId)
+    }
+
+    func toggleTranscript() {
+        transcriptMode.toggle()
+        guard let tabId = activeTabId else { return }
+        if transcriptMode {
+            transcriptTabId = tabId
+            connection(for: tabId)?.subscribeTranscript(tabId: tabId)
+        } else {
+            if let tid = transcriptTabId {
+                connection(for: tid)?.unsubscribeTranscript(tabId: tid)
+            }
+            transcriptTabId = nil
+            transcriptMessages = []
+        }
     }
 
     // MARK: - Scrollback Cache

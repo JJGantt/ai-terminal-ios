@@ -26,17 +26,16 @@ struct TerminalHostView: UIViewRepresentable {
             view?.becomeFirstResponder()
         }
 
-        // Any touch = reclaim terminal dimensions for phone
-        let touch = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleAnyTouch(_:)))
-        touch.minimumPressDuration = 0
-        touch.cancelsTouchesInView = false
-        touch.delegate = context.coordinator
-        view.addGestureRecognizer(touch)
-
-        // Tap = start/stop recording (also prevents terminal auto-focus)
-        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap))
+        // Tap = start/stop recording + reclaim phone dimensions
+        let tap = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
         tap.cancelsTouchesInView = true
         view.addGestureRecognizer(tap)
+
+        // Long press = toggle transcript view
+        let longPress = UILongPressGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleLongPress(_:)))
+        longPress.minimumPressDuration = 0.6
+        longPress.cancelsTouchesInView = false
+        view.addGestureRecognizer(longPress)
 
         // Swipe left/right = switch tabs
         let swipeLeft = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleSwipeLeft))
@@ -46,12 +45,6 @@ struct TerminalHostView: UIViewRepresentable {
         let swipeRight = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleSwipeRight))
         swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
-
-        // Two-finger swipe down = enter scroll lock
-        let twoFingerSwipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleScrollLock))
-        twoFingerSwipe.direction = .down
-        twoFingerSwipe.numberOfTouchesRequired = 2
-        view.addGestureRecognizer(twoFingerSwipe)
 
         // Pinch to zoom = change font size
         let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
@@ -123,7 +116,16 @@ struct TerminalHostView: UIViewRepresentable {
             }
         }
 
-        @objc func handleTap() {
+        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+            // Reclaim phone dimensions on tap
+            if let view = gesture.view as? TerminalView {
+                let cols = view.getTerminal().cols
+                let rows = view.getTerminal().rows
+                if cols > 0 && rows > 0 {
+                    sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
+                }
+            }
+            // Voice toggle
             switch voiceRecorder.state {
             case .idle:        voiceRecorder.start()
             case .recording:   voiceRecorder.stop()
@@ -131,20 +133,13 @@ struct TerminalHostView: UIViewRepresentable {
             }
         }
 
-        @objc func handleAnyTouch(_ gesture: UILongPressGestureRecognizer) {
+        @objc func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
             guard gesture.state == .began else { return }
-            // Force-send phone dimensions on any touch to reclaim from Mac
-            guard let view = gesture.view as? TerminalView else { return }
-            let cols = view.getTerminal().cols
-            let rows = view.getTerminal().rows
-            if cols > 0 && rows > 0 {
-                sessionManager.resize(tabId: tabId, cols: cols, rows: rows)
-            }
+            DispatchQueue.main.async { self.sessionManager.toggleTranscript() }
         }
 
         @objc func handleSwipeLeft()  { sessionManager.switchTab(delta: 1) }
         @objc func handleSwipeRight() { sessionManager.switchTab(delta: -1) }
-        @objc func handleScrollLock() { sessionManager.scrollLockActive = true }
 
         @objc func handlePinch(_ pinch: UIPinchGestureRecognizer) {
             guard let view = pinch.view as? TerminalView else { return }

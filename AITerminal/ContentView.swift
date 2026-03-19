@@ -32,28 +32,10 @@ struct ContentView: View {
                 ZStack {
                     TerminalHostView(tabId: tabId, voiceRecorder: voice)
                         .id(tabId)
-                        .opacity(sessionManager.scrollLockActive ? 0 : 1)
+                        .opacity(sessionManager.transcriptMode ? 0 : 1)
 
-                    if sessionManager.scrollLockActive {
-                        FrozenTerminalView(
-                            content: sessionManager.getStrippedScrollback(for: tabId) ?? "",
-                            onScrolledToBottom: { sessionManager.scrollLockActive = false }
-                        )
-
-                        VStack {
-                            Spacer()
-                            Button {
-                                sessionManager.scrollLockActive = false
-                            } label: {
-                                Text("Resume Live")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(.blue.opacity(0.8), in: Capsule())
-                            }
-                            .padding(.bottom, 12)
-                        }
+                    if sessionManager.transcriptMode {
+                        TranscriptView(messages: sessionManager.transcriptMessages)
                     }
                 }
             } else {
@@ -251,24 +233,6 @@ struct ContentView: View {
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .padding(.leading, 8)
-                    .offset(y: -44)
-                    .transition(.scale.combined(with: .opacity))
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                if let tabId = sessionManager.activeTabId,
-                   sessionManager.isInAltBuffer[tabId] == true,
-                   !sessionManager.scrollLockActive {
-                    Button {
-                        sessionManager.scrollLockActive = true
-                    } label: {
-                        Image(systemName: "scroll")
-                            .font(.system(size: 15))
-                            .foregroundStyle(.blue)
-                            .frame(width: 36, height: 36)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .padding(.trailing, 8)
                     .offset(y: -44)
                     .transition(.scale.combined(with: .opacity))
                 }

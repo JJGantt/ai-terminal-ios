@@ -17,6 +17,8 @@ class HostConnection: ObservableObject {
     var onTabCreated: ((String) -> Void)?
     /// Called when connection is (re)established — used to re-subscribe active tab.
     var onConnected: (() -> Void)?
+    /// Called with (tabId, messages) when transcript data arrives.
+    var onTranscript: ((String, [[String: String]]) -> Void)?
 
     private var webSocket: URLSessionWebSocketTask?
     private let urlSession = URLSession(configuration: .default)
@@ -136,6 +138,16 @@ class HostConnection: ObservableObject {
                     return HistorySession(id: id, title: title, timestamp: timestamp, host: host)
                 }
 
+            case "transcript", "transcript_update":
+                guard let tabId = json["tabId"] as? String,
+                      let rawMsgs = json["messages"] as? [[String: Any]] else { return }
+                let msgs = rawMsgs.compactMap { dict -> [String: String]? in
+                    guard let role = dict["role"] as? String,
+                          let text = dict["text"] as? String else { return nil }
+                    return ["role": role, "text": text]
+                }
+                self.onTranscript?(tabId, msgs)
+
             default: break
             }
         }
@@ -182,6 +194,8 @@ class HostConnection: ObservableObject {
         send(msg)
     }
     func requestHistory()                { send(["type": "history_request"]) }
+    func subscribeTranscript(tabId: String)   { send(["type": "transcript_subscribe", "tabId": tabId]) }
+    func unsubscribeTranscript(tabId: String) { send(["type": "transcript_unsubscribe", "tabId": tabId]) }
     func regenerateName(sessionId: String) { send(["type": "regenerate_name", "sessionId": sessionId]) }
 
     func send(_ dict: [String: Any]) {
