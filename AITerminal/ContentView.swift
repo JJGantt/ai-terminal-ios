@@ -60,13 +60,8 @@ struct ContentView: View {
             sessionManager.pendingAction = nil
             switch action {
             case .newSession(let host, let record):
+                if record { voice.start() }
                 sessionManager.newTab(on: host)
-                if record {
-                    // Delay to let the tab create and TerminalHostView mount
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        voice.start()
-                    }
-                }
             }
         }
     }
