@@ -27,8 +27,9 @@ class VoiceRecorder: ObservableObject {
     private var baseline: Float = -160
     private var baselineEstablished = false
     private var silenceStart: Date?
-    private let baselineWindow: TimeInterval = 0.5  // seconds to sample baseline
-    private let silenceMarginDB: Float = 8           // dB above baseline = still "silence"
+    private let baselineWindow: TimeInterval = 0.3  // seconds to sample baseline (before speech starts)
+    private let silenceMarginDB: Float = 15          // dB above baseline = still "silence"
+    private let minRecordingTime: TimeInterval = 5   // don't auto-stop before this
 
     var onComplete: ((Data, Double) -> Void)?
 
@@ -137,6 +138,7 @@ class VoiceRecorder: ObservableObject {
         }
 
         // Phase 2: Detect silence (level near baseline)
+        guard elapsed >= minRecordingTime else { return }  // don't auto-stop too early
         let isSilent = level < (baseline + silenceMarginDB)
 
         if isSilent {
