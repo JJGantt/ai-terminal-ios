@@ -37,6 +37,15 @@ struct ContentView: View {
                     if sessionManager.transcriptMode {
                         TranscriptView(messages: sessionManager.transcriptMessages)
                             .simultaneousGesture(
+                                TapGesture().onEnded {
+                                    switch voice.state {
+                                    case .idle:         voice.start()
+                                    case .recording:    voice.stop()
+                                    case .transcribing: break
+                                    }
+                                }
+                            )
+                            .simultaneousGesture(
                                 LongPressGesture(minimumDuration: 0.6)
                                     .onEnded { _ in sessionManager.toggleTranscript() }
                             )
