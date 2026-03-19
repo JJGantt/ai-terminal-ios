@@ -49,6 +49,16 @@ struct ContentView: View {
                                 LongPressGesture(minimumDuration: 0.6)
                                     .onEnded { _ in sessionManager.toggleTranscript() }
                             )
+                            .simultaneousGesture(
+                                DragGesture(minimumDistance: 40)
+                                    .onEnded { val in
+                                        let h = val.translation.width
+                                        let v = val.translation.height
+                                        guard abs(h) > abs(v) else { return }
+                                        if h < -40 { sessionManager.switchTab(delta: 1) }
+                                        else if h > 40 { sessionManager.switchTab(delta: -1) }
+                                    }
+                            )
                     }
                 }
             } else {
