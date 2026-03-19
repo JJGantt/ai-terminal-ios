@@ -40,6 +40,11 @@ struct TerminalHostView: UIViewRepresentable {
         swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
 
+        // Vertical pan = scroll within TUI (sends mouse wheel events to Claude Code)
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
+        pan.delegate = context.coordinator
+        view.addGestureRecognizer(pan)
+
         // Send initial resize once layout is known
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak view] in
             guard let view else { return }
@@ -75,16 +80,23 @@ struct TerminalHostView: UIViewRepresentable {
         Coordinator(tabId: tabId, sessionManager: sessionManager, voiceRecorder: voiceRecorder)
     }
 
-    class Coordinator: NSObject, TerminalViewDelegate {
+    class Coordinator: NSObject, TerminalViewDelegate, UIGestureRecognizerDelegate {
         let tabId: String
         let sessionManager: SessionManager
         let voiceRecorder: VoiceRecorder
         var foregroundObserver: NSObjectProtocol?
+        private var panAccumulator: CGFloat = 0
+        private let scrollThreshold: CGFloat = 20  // pixels per scroll line
 
         init(tabId: String, sessionManager: SessionManager, voiceRecorder: VoiceRecorder) {
             self.tabId = tabId
             self.sessionManager = sessionManager
             self.voiceRecorder = voiceRecorder
+        }
+
+        // Allow pan + swipe to coexist
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            true
         }
 
         deinit {
@@ -103,6 +115,34 @@ struct TerminalHostView: UIViewRepresentable {
 
         @objc func handleSwipeLeft()  { sessionManager.switchTab(delta: 1) }
         @objc func handleSwipeRight() { sessionManager.switchTab(delta: -1) }
+
+        @objc func handlePan(_ pan: UIPanGestureRecognizer) {
+            let translation = pan.translation(in: pan.view)
+
+            switch pan.state {
+            case .began:
+                panAccumulator = 0
+            case .changed:
+                panAccumulator += translation.y
+                pan.setTranslation(.zero, in: pan.view)
+
+                // Send scroll events for each threshold crossed
+                while panAccumulator > scrollThreshold {
+                    panAccumulator -= scrollThreshold
+                    // Scroll down (finger moves down = content scrolls up = mouse wheel down)
+                    // SGR mouse protocol: button 65 = scroll down
+                    sessionManager.sendInput("\u{1b}[<65;1;1M")
+                }
+                while panAccumulator < -scrollThreshold {
+                    panAccumulator += scrollThreshold
+                    // Scroll up (finger moves up = content scrolls down = mouse wheel up)
+                    // SGR mouse protocol: button 64 = scroll up
+                    sessionManager.sendInput("\u{1b}[<64;1;1M")
+                }
+            default:
+                panAccumulator = 0
+            }
+        }
 
         // MARK: — TerminalViewDelegate
 
