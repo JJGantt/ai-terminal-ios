@@ -15,6 +15,8 @@ class HostConnection: ObservableObject {
     var onData: ((String, String) -> Void)?
     /// Called with tabId when a phone-initiated tab is created.
     var onTabCreated: ((String) -> Void)?
+    /// Called when connection is (re)established — used to re-subscribe active tab.
+    var onConnected: (() -> Void)?
 
     private var webSocket: URLSessionWebSocketTask?
     private let urlSession = URLSession(configuration: .default)
@@ -102,8 +104,13 @@ class HostConnection: ObservableObject {
                 let oldIds = self.tabs.map(\.id)
                 let newIds = parsed.map(\.id)
                 print("[\(self.hostId)] sessions: \(oldIds.count) → \(newIds.count), old=\(oldIds.map { String($0.prefix(8)) }), new=\(newIds.map { String($0.prefix(8)) })")
+                let wasConnected = self.connected
                 self.tabs = parsed
                 self.connected = true
+                // Re-subscribe after reconnect
+                if !wasConnected {
+                    self.onConnected?()
+                }
 
             case "scrollback", "data":
                 guard let tabId = json["tabId"] as? String,

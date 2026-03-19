@@ -57,9 +57,29 @@ struct ContentView: View {
         }
         .onChange(of: sessionManager.pendingAction) { _, action in
             guard let action else { return }
-            sessionManager.pendingAction = nil
             switch action {
             case .newSession(let host, let record):
+                let isConnected = host == "pi" ? sessionManager.piConnected : sessionManager.macConnected
+                if isConnected {
+                    sessionManager.pendingAction = nil
+                    if record { voice.start() }
+                    sessionManager.newTab(on: host)
+                }
+                // If not connected yet, leave pendingAction set — it'll fire when connection comes up
+            }
+        }
+        .onChange(of: sessionManager.piConnected) { _, connected in
+            guard connected, let action = sessionManager.pendingAction else { return }
+            if case .newSession(let host, let record) = action, host == "pi" {
+                sessionManager.pendingAction = nil
+                if record { voice.start() }
+                sessionManager.newTab(on: host)
+            }
+        }
+        .onChange(of: sessionManager.macConnected) { _, connected in
+            guard connected, let action = sessionManager.pendingAction else { return }
+            if case .newSession(let host, let record) = action, host == "mac" {
+                sessionManager.pendingAction = nil
                 if record { voice.start() }
                 sessionManager.newTab(on: host)
             }

@@ -130,6 +130,26 @@ class SessionManager: ObservableObject {
             self?.onData[tabId]?(chunk)
         }
 
+        // Re-subscribe active tab after reconnect so data flows again
+        mac.onConnected = { [weak self] in
+            guard let self, let tabId = self.activeTabId,
+                  self.mac.tabs.contains(where: { $0.id == tabId }) else { return }
+            print("[SessionManager] mac reconnected, re-subscribing to \(tabId)")
+            self.mac.subscribe(to: tabId)
+            if self.lastCols > 0 && self.lastRows > 0 {
+                self.mac.resize(tabId: tabId, cols: self.lastCols, rows: self.lastRows)
+            }
+        }
+        pi.onConnected = { [weak self] in
+            guard let self, let tabId = self.activeTabId,
+                  self.pi.tabs.contains(where: { $0.id == tabId }) else { return }
+            print("[SessionManager] pi reconnected, re-subscribing to \(tabId)")
+            self.pi.subscribe(to: tabId)
+            if self.lastCols > 0 && self.lastRows > 0 {
+                self.pi.resize(tabId: tabId, cols: self.lastCols, rows: self.lastRows)
+            }
+        }
+
         // Auto-subscribe when phone creates a new tab.
         // Use the connection directly — don't go through connection(for:) because
         // the tab won't be in .tabs yet when tab_created fires (sessions broadcast
