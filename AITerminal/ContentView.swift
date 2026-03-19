@@ -14,7 +14,6 @@ struct ContentView: View {
     @StateObject private var voice = VoiceRecorder()
     @State private var keyboardVisible = false
     @State private var showSessions = false
-    @State private var showClaudeSettings = false
     @State private var pendingCloseTabId: String?
 
     var activeTab: TabInfo? {
@@ -41,9 +40,6 @@ struct ContentView: View {
         .background(.black)
         .sheet(isPresented: $showSessions) {
             SessionsPanel(isPresented: $showSessions)
-        }
-        .sheet(isPresented: $showClaudeSettings) {
-            ClaudeSettingsPanel(isPresented: $showClaudeSettings)
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             keyboardVisible = true
@@ -164,13 +160,20 @@ struct ContentView: View {
                 keyboardButton
                     .frame(maxWidth: .infinity)
 
-                Button { showClaudeSettings = true } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.system(size: 20))
-                        .foregroundStyle(.primary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
+                Button {
+                    sessionManager.newTab(on: "pi")
+                } label: {
+                    HStack(spacing: 2) {
+                        Text("\u{03C0}")
+                            .font(.system(size: 18, weight: .semibold))
+                        Image(systemName: "plus")
+                            .font(.system(size: 12, weight: .bold))
+                    }
+                    .foregroundStyle(sessionManager.piConnected ? .primary : .secondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
                 }
+                .disabled(!sessionManager.piConnected)
             }
             .background(.black.opacity(0.85))
             .overlay(alignment: .topLeading) {

@@ -1,8 +1,20 @@
 import SwiftUI
 
+private struct ModelOption {
+    let label: String
+    let alias: String
+}
+
+private let modelOptions: [ModelOption] = [
+    ModelOption(label: "Opus 4.6",   alias: "opus"),
+    ModelOption(label: "Sonnet 4.6", alias: "sonnet"),
+    ModelOption(label: "Haiku 4.5",  alias: "haiku"),
+]
+
 struct SessionsPanel: View {
     @EnvironmentObject var sessionManager: SessionManager
     @Binding var isPresented: Bool
+    @State private var confirmCloseAll = false
 
     var body: some View {
         NavigationView {
@@ -29,7 +41,7 @@ struct SessionsPanel: View {
                         isPresented = false
                     } label: {
                         HStack(spacing: 10) {
-                            Text("π")
+                            Text("\u{03C0}")
                                 .font(.system(size: 16, weight: .semibold))
                                 .frame(width: 18)
                             Image(systemName: "plus.circle.fill")
@@ -38,6 +50,36 @@ struct SessionsPanel: View {
                         .foregroundStyle(sessionManager.piConnected ? .blue : .secondary)
                     }
                     .disabled(!sessionManager.piConnected)
+                }
+
+                // Close all tabs
+                if !sessionManager.tabs.isEmpty {
+                    Section {
+                        Button(role: .destructive) {
+                            confirmCloseAll = true
+                        } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .frame(width: 18)
+                                Text("Close All Tabs")
+                                Spacer()
+                                Text("\(sessionManager.tabs.count)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .font(.system(size: 16, weight: .medium))
+                        }
+                        .confirmationDialog(
+                            "Close all \(sessionManager.tabs.count) tabs?",
+                            isPresented: $confirmCloseAll,
+                            titleVisibility: .visible
+                        ) {
+                            Button("Close All", role: .destructive) {
+                                sessionManager.closeAllTabs()
+                                isPresented = false
+                            }
+                        }
+                    }
                 }
 
                 // All recent sessions mixed together
@@ -84,8 +126,37 @@ struct SessionsPanel: View {
                             .font(.caption)
                     }
                 }
+
+                // Settings
+                Section("Settings") {
+                    Button {
+                        sessionManager.sendSlashCommand("/usage")
+                        isPresented = false
+                    } label: {
+                        Label("Check Usage", systemImage: "chart.bar.fill")
+                            .foregroundStyle(.primary)
+                    }
+
+                    ForEach(modelOptions, id: \.alias) { model in
+                        Button {
+                            sessionManager.sendSlashCommand("/model \(model.alias)")
+                            isPresented = false
+                        } label: {
+                            Text(model.label)
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                    Button {
+                        sessionManager.sendSlashCommand("/model")
+                        isPresented = false
+                    } label: {
+                        Label("Browse All Models…", systemImage: "chevron.right")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 14))
+                    }
+                }
             }
-            .navigationTitle("Sessions")
+            .navigationTitle("Menu")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

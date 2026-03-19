@@ -177,6 +177,13 @@ class SessionManager: ObservableObject {
         }
     }
 
+    func closeAllTabs() {
+        for tab in tabs {
+            connection(for: tab.id)?.killTab(tab.id)
+        }
+        activeTabId = nil
+    }
+
     func switchTab(delta: Int) {
         guard !tabs.isEmpty,
               let activeId = activeTabId,
