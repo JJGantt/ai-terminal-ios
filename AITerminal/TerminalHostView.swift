@@ -40,11 +40,6 @@ struct TerminalHostView: UIViewRepresentable {
         swipeRight.direction = .right
         view.addGestureRecognizer(swipeRight)
 
-        // Vertical pan = scroll within TUI (sends mouse wheel events to Claude Code)
-        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePan(_:)))
-        pan.delegate = context.coordinator
-        view.addGestureRecognizer(pan)
-
         // Pinch to zoom = change font size
         let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
         pinch.delegate = context.coordinator
@@ -96,8 +91,6 @@ struct TerminalHostView: UIViewRepresentable {
         let sessionManager: SessionManager
         let voiceRecorder: VoiceRecorder
         var foregroundObserver: NSObjectProtocol?
-        private var panAccumulator: CGFloat = 0
-        private let scrollThreshold: CGFloat = 20  // pixels per scroll line
         private var pinchBaseFontSize: CGFloat = 0
 
         init(tabId: String, sessionManager: SessionManager, voiceRecorder: VoiceRecorder) {
@@ -141,34 +134,6 @@ struct TerminalHostView: UIViewRepresentable {
                 UserDefaults.standard.set(finalSize, forKey: "terminalFontSize")
                 // sizeChanged delegate fires automatically → sends resize to server
             default: break
-            }
-        }
-
-        @objc func handlePan(_ pan: UIPanGestureRecognizer) {
-            let translation = pan.translation(in: pan.view)
-
-            switch pan.state {
-            case .began:
-                panAccumulator = 0
-            case .changed:
-                panAccumulator += translation.y
-                pan.setTranslation(.zero, in: pan.view)
-
-                // Send scroll events for each threshold crossed
-                while panAccumulator > scrollThreshold {
-                    panAccumulator -= scrollThreshold
-                    // Scroll down (finger moves down = content scrolls up = mouse wheel down)
-                    // SGR mouse protocol: button 65 = scroll down
-                    sessionManager.sendInput("\u{1b}[<65;1;1M")
-                }
-                while panAccumulator < -scrollThreshold {
-                    panAccumulator += scrollThreshold
-                    // Scroll up (finger moves up = content scrolls down = mouse wheel up)
-                    // SGR mouse protocol: button 64 = scroll up
-                    sessionManager.sendInput("\u{1b}[<64;1;1M")
-                }
-            default:
-                panAccumulator = 0
             }
         }
 
