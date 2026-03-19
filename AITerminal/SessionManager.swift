@@ -50,6 +50,10 @@ class SessionManager: ObservableObject {
     /// Called to focus the active terminal (show keyboard).
     var focusTerminal: (() -> Void)?
 
+    /// Last known terminal dimensions (from any resize), sent with new tab requests.
+    private(set) var lastCols = 0
+    private(set) var lastRows = 0
+
     private var cancellables = Set<AnyCancellable>()
 
     /// Maintains stable tab order — new tabs appended, removed tabs pruned.
@@ -181,6 +185,8 @@ class SessionManager: ObservableObject {
     }
 
     func resize(tabId: String, cols: Int, rows: Int) {
+        lastCols = cols
+        lastRows = rows
         connection(for: tabId)?.resize(tabId: tabId, cols: cols, rows: rows)
     }
 
@@ -193,11 +199,11 @@ class SessionManager: ObservableObject {
     func newTab(on hostId: String = "mac") {
         let conn = connection(forHost: hostId)
         print("[SessionManager] newTab on \(hostId), conn.hostId=\(conn.hostId), conn.connected=\(conn.connected)")
-        conn.newTab()
+        conn.newTab(cols: lastCols, rows: lastRows)
     }
 
     func resumeTab(sessionId: String, host: String) {
-        connection(forHost: host).resumeTab(sessionId: sessionId)
+        connection(forHost: host).resumeTab(sessionId: sessionId, cols: lastCols, rows: lastRows)
     }
 
     func requestHistory() {

@@ -135,11 +135,17 @@ class HostConnection: ObservableObject {
         send(["type": "kill_tab", "tabId": tabId])
     }
 
-    func newTab() {
-        print("[\(hostId)] newTab called, connected=\(connected), ws=\(webSocket != nil)")
-        send(["type": "new_tab"])
+    func newTab(cols: Int = 0, rows: Int = 0) {
+        print("[\(hostId)] newTab called, connected=\(connected), ws=\(webSocket != nil), \(cols)x\(rows)")
+        var msg: [String: Any] = ["type": "new_tab"]
+        if cols > 0 && rows > 0 { msg["cols"] = cols; msg["rows"] = rows }
+        send(msg)
     }
-    func resumeTab(sessionId: String)    { send(["type": "resume_tab", "sessionId": sessionId]) }
+    func resumeTab(sessionId: String, cols: Int = 0, rows: Int = 0) {
+        var msg: [String: Any] = ["type": "resume_tab", "sessionId": sessionId]
+        if cols > 0 && rows > 0 { msg["cols"] = cols; msg["rows"] = rows }
+        send(msg)
+    }
     func requestHistory()                { send(["type": "history_request"]) }
     func regenerateName(sessionId: String) { send(["type": "regenerate_name", "sessionId": sessionId]) }
 
