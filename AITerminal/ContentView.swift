@@ -15,6 +15,8 @@ struct ContentView: View {
     @State private var keyboardVisible = false
     @State private var showSessions = false
     @State private var pendingCloseTabId: String?
+    @AppStorage("transcriptFontSize") private var transcriptFontSize: Double = 13
+    @State private var pinchBaseFontSize: Double = 13
 
     var activeTab: TabInfo? {
         sessionManager.tabs.first { $0.id == sessionManager.activeTabId }
@@ -35,9 +37,20 @@ struct ContentView: View {
                         .opacity(sessionManager.transcriptMode ? 0 : 1)
 
                     if sessionManager.transcriptMode {
-                        TranscriptView(messages: sessionManager.transcriptMessages)
+                        TranscriptView(messages: sessionManager.transcriptMessages, fontSize: transcriptFontSize)
                     }
                 }
+                .simultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { val in
+                            if sessionManager.transcriptMode {
+                                transcriptFontSize = min(max(pinchBaseFontSize * val, 9), 28)
+                            }
+                        }
+                        .onEnded { _ in
+                            pinchBaseFontSize = transcriptFontSize
+                        }
+                )
                 .simultaneousGesture(
                     TapGesture().onEnded {
                         switch voice.state {

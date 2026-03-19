@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TranscriptView: View {
     let messages: [[String: String]]
+    var fontSize: Double = 13
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -9,7 +10,7 @@ struct TranscriptView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(Array(messages.enumerated()), id: \.offset) { idx, msg in
                         let isUser = msg["role"] == "user"
-                        MarkdownMessage(text: msg["text"] ?? "", isUser: isUser)
+                        MarkdownMessage(text: msg["text"] ?? "", isUser: isUser, fontSize: fontSize)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.vertical, 8)
                             .padding(.horizontal, 16)
@@ -35,6 +36,7 @@ struct TranscriptView: View {
 private struct MarkdownMessage: View {
     let text: String
     let isUser: Bool
+    var fontSize: Double = 13
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -42,16 +44,16 @@ private struct MarkdownMessage: View {
                 if block.isCode {
                     ScrollView(.horizontal, showsIndicators: false) {
                         Text(block.content)
-                            .font(.system(size: 12, design: .monospaced))
-                            .foregroundStyle(Color(UIColor.systemGray2))
+                            .font(.system(size: fontSize - 1, design: .monospaced))
+                            .foregroundStyle(Color.gray)
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .background(Color(white: 0.1), in: RoundedRectangle(cornerRadius: 6))
                 } else if !block.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text(attributed(block.content))
-                        .font(.system(size: 13))
-                        .foregroundStyle(isUser ? Color.white : Color(UIColor.systemGray))
+                        .font(.system(size: fontSize))
+                        .foregroundStyle(isUser ? Color.white : Color.gray)
                 }
             }
         }
