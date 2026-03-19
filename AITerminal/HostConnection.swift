@@ -68,13 +68,17 @@ class HostConnection: ObservableObject {
             switch type {
             case "sessions":
                 guard let rawTabs = json["tabs"] as? [[String: Any]] else { return }
-                self.tabs = rawTabs.compactMap { dict -> TabInfo? in
+                let parsed = rawTabs.compactMap { dict -> TabInfo? in
                     guard let id   = dict["id"]   as? String,
                           let name = dict["name"] as? String else { return nil }
                     return TabInfo(id: id, name: name,
                                    working: dict["working"] as? Bool ?? false,
                                    host: self.hostId)
                 }
+                let oldIds = self.tabs.map(\.id)
+                let newIds = parsed.map(\.id)
+                print("[\(self.hostId)] sessions: \(oldIds.count) → \(newIds.count), old=\(oldIds.map { String($0.prefix(8)) }), new=\(newIds.map { String($0.prefix(8)) })")
+                self.tabs = parsed
                 self.connected = true
 
             case "scrollback", "data":

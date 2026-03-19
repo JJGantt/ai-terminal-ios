@@ -67,6 +67,7 @@ class SessionManager: ObservableObject {
                 guard let self else { return }
                 let incoming = macTabs + piTabs
                 let incomingIds = Set(incoming.map(\.id))
+                let beforeCount = self.tabs.count
                 // Remove tabs that no longer exist
                 self.tabOrder.removeAll { !incomingIds.contains($0) }
                 // Append any new tabs at the end
@@ -76,6 +77,7 @@ class SessionManager: ObservableObject {
                 // Build ordered list
                 let lookup = Dictionary(incoming.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
                 self.tabs = self.tabOrder.compactMap { lookup[$0] }
+                print("[SessionManager] merge: mac=\(macTabs.count) pi=\(piTabs.count) → \(self.tabs.count) (was \(beforeCount))")
 
                 if let active = self.activeTabId, !incomingIds.contains(active) {
                     self.activeTabId = self.tabs.first?.id
