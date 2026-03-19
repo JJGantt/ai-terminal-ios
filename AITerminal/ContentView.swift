@@ -55,6 +55,20 @@ struct ContentView: View {
                 sessionManager.sendVoice(audioData: data, durationS: duration)
             }
         }
+        .onChange(of: sessionManager.pendingAction) { _, action in
+            guard let action else { return }
+            sessionManager.pendingAction = nil
+            switch action {
+            case .newSession(let host, let record):
+                sessionManager.newTab(on: host)
+                if record {
+                    // Delay to let the tab create and TerminalHostView mount
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        voice.start()
+                    }
+                }
+            }
+        }
     }
 
     // MARK: — Tab strip

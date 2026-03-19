@@ -33,6 +33,10 @@ struct HistorySession: Identifiable {
     }
 }
 
+enum LaunchAction: Equatable {
+    case newSession(host: String, record: Bool)
+}
+
 class SessionManager: ObservableObject {
     let mac = HostConnection(hostId: "mac", hosts: ["Jareds-MacBook-Air.local", "100.106.101.57"])
     let pi  = HostConnection(hostId: "pi",  hosts: ["raspberrypi.local", "100.104.197.58"])
@@ -49,6 +53,9 @@ class SessionManager: ObservableObject {
     var onData: [String: (String) -> Void] = [:]
     /// Called to focus the active terminal (show keyboard).
     var focusTerminal: (() -> Void)?
+
+    /// Pending action from URL scheme launch.
+    @Published var pendingAction: LaunchAction?
 
     /// Last known terminal dimensions (from any resize), sent with new tab requests.
     private(set) var lastCols = 0
