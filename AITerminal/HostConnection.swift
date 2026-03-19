@@ -20,6 +20,7 @@ class HostConnection: ObservableObject {
     private let urlSession = URLSession(configuration: .default)
     private var hostIndex = 0
     private var activeTabId: String?
+    private var retryWork: DispatchWorkItem?
 
     init(hostId: String, hosts: [String]) {
         self.hostId = hostId
@@ -29,12 +30,36 @@ class HostConnection: ObservableObject {
     // MARK: - Connection
 
     func connect() {
+        // Cancel any pending retry
+        retryWork?.cancel()
+        retryWork = nil
+        // Close stale socket
+        webSocket?.cancel(with: .goingAway, reason: nil)
+
         let host = hosts[hostIndex]
         guard let url = URL(string: "ws://\(host):\(port)") else { return }
         print("[\(hostId)] connecting to \(url)")
         webSocket = urlSession.webSocketTask(with: url)
         webSocket?.resume()
         receive()
+    }
+
+    /// Immediately reconnect if not already connected (e.g. returning from background).
+    func reconnectIfNeeded() {
+        guard !connected else { return }
+        print("[\(hostId)] reconnectIfNeeded: forcing immediate reconnect")
+        connect()
+    }
+
+    private func scheduleRetry() {
+        retryWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.hostIndex = (self.hostIndex + 1) % self.hosts.count
+            self.connect()
+        }
+        retryWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: work)
     }
 
     private func receive() {
@@ -46,10 +71,9 @@ class HostConnection: ObservableObject {
                 self.receive()
             case .failure(let error):
                 print("[\(self.hostId)] error: \(error.localizedDescription)")
-                DispatchQueue.main.async { self.connected = false }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    self.hostIndex = (self.hostIndex + 1) % self.hosts.count
-                    self.connect()
+                DispatchQueue.main.async {
+                    self.connected = false
+                    self.scheduleRetry()
                 }
             }
         }

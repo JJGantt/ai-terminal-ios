@@ -136,6 +136,12 @@ class SessionManager: ObservableObject {
 
         mac.connect()
         pi.connect()
+
+        // Reconnect immediately when returning from background
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.mac.reconnectIfNeeded()
+            self?.pi.reconnectIfNeeded()
+        }
     }
 
     // MARK: - Routing
