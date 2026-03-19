@@ -11,6 +11,11 @@ struct TerminalHostView: UIViewRepresentable {
         view.terminalDelegate = context.coordinator
         view.backgroundColor = .black
 
+        // Feed cached scrollback immediately (survives background/foreground)
+        if let cached = sessionManager.getCachedScrollback(for: tabId) {
+            view.feed(text: cached)
+        }
+
         // Register data callback
         sessionManager.onData[tabId] = { [weak view] chunk in
             DispatchQueue.main.async { view?.feed(text: chunk) }

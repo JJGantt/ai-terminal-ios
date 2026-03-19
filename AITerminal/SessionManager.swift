@@ -54,6 +54,10 @@ class SessionManager: ObservableObject {
     /// Called to focus the active terminal (show keyboard).
     var focusTerminal: (() -> Void)?
 
+    /// Local scrollback cache — survives background/foreground cycles.
+    private var scrollbackCache: [String: String] = [:]
+    private let maxScrollback = 100 * 1024  // 100KB per tab
+
     /// Pending action from URL scheme launch.
     @Published var pendingAction: LaunchAction?
 
@@ -115,9 +119,15 @@ class SessionManager: ObservableObject {
         pi.$connected.receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.piConnected  = $0 }.store(in: &cancellables)
 
-        // Route PTY data to TerminalHostView callbacks
-        mac.onData = { [weak self] tabId, chunk in self?.onData[tabId]?(chunk) }
-        pi.onData  = { [weak self] tabId, chunk in self?.onData[tabId]?(chunk) }
+        // Route PTY data to TerminalHostView callbacks + cache scrollback
+        mac.onData = { [weak self] tabId, chunk in
+            self?.appendScrollback(tabId: tabId, chunk: chunk)
+            self?.onData[tabId]?(chunk)
+        }
+        pi.onData = { [weak self] tabId, chunk in
+            self?.appendScrollback(tabId: tabId, chunk: chunk)
+            self?.onData[tabId]?(chunk)
+        }
 
         // Auto-subscribe when phone creates a new tab.
         // Use the connection directly — don't go through connection(for:) because
@@ -240,5 +250,21 @@ class SessionManager: ObservableObject {
 
     func regenerateName(sessionId: String, host: String) {
         connection(forHost: host).regenerateName(sessionId: sessionId)
+    }
+
+    // MARK: - Scrollback Cache
+
+    private func appendScrollback(tabId: String, chunk: String) {
+        var buf = scrollbackCache[tabId] ?? ""
+        buf += chunk
+        if buf.count > maxScrollback {
+            buf = String(buf.suffix(maxScrollback))
+        }
+        scrollbackCache[tabId] = buf
+    }
+
+    /// Returns cached scrollback for a tab (used by TerminalHostView on creation).
+    func getCachedScrollback(for tabId: String) -> String? {
+        scrollbackCache[tabId]
     }
 }
