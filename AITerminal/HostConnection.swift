@@ -25,6 +25,7 @@ class HostConnection: ObservableObject {
     private var hostIndex = 0
     private var activeTabId: String?
     private var retryWork: DispatchWorkItem?
+    private var connectionTimeout: DispatchWorkItem?
 
     init(hostId: String, hosts: [String]) {
         self.hostId = hostId
@@ -34,9 +35,11 @@ class HostConnection: ObservableObject {
     // MARK: - Connection
 
     func connect() {
-        // Cancel any pending retry
+        // Cancel any pending retry and connection timeout
         retryWork?.cancel()
         retryWork = nil
+        connectionTimeout?.cancel()
+        connectionTimeout = nil
         // Close stale socket
         webSocket?.cancel(with: .goingAway, reason: nil)
 
@@ -46,6 +49,18 @@ class HostConnection: ObservableObject {
         webSocket = urlSession.webSocketTask(with: url)
         webSocket?.resume()
         receive()
+
+        // If not connected within 5s (e.g. raspberrypi.local mDNS hangs off local network),
+        // rotate to the next host immediately instead of waiting for the OS timeout.
+        let timeout = DispatchWorkItem { [weak self] in
+            guard let self, !self.connected else { return }
+            print("[\(self.hostId)] connect timeout for \(host), rotating to next host")
+            self.webSocket?.cancel(with: .goingAway, reason: nil)
+            self.hostIndex = (self.hostIndex + 1) % self.hosts.count
+            self.connect()
+        }
+        connectionTimeout = timeout
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeout)
     }
 
     /// Immediately reconnect if not already connected (e.g. returning from background).
@@ -76,6 +91,8 @@ class HostConnection: ObservableObject {
             case .failure(let error):
                 print("[\(self.hostId)] error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
+                    self.connectionTimeout?.cancel()
+                    self.connectionTimeout = nil
                     self.connected = false
                     self.scheduleRetry()
                 }
@@ -109,6 +126,8 @@ class HostConnection: ObservableObject {
                 let wasConnected = self.connected
                 self.tabs = parsed
                 self.connected = true
+                self.connectionTimeout?.cancel()
+                self.connectionTimeout = nil
                 // Re-subscribe after reconnect
                 if !wasConnected {
                     self.onConnected?()
