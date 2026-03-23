@@ -101,6 +101,7 @@ class HostConnection: ObservableObject {
                         // Active connection dropped
                         self.webSocket = nil
                         self.connected = false
+                        self.tabs = []
                         self.scheduleRetry()
                     } else if !self.connected && self.racingSockets.isEmpty && self.webSocket == nil {
                         // All racers failed

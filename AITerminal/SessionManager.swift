@@ -235,7 +235,14 @@ class SessionManager: ObservableObject {
     }
 
     func closeTab(_ tabId: String) {
-        connection(for: tabId)?.killTab(tabId)
+        let conn = connection(for: tabId)
+        if conn?.connected == true {
+            conn?.killTab(tabId)
+        } else {
+            // Offline: remove locally since we can't reach the server
+            mac.tabs.removeAll { $0.id == tabId }
+            pi.tabs.removeAll { $0.id == tabId }
+        }
         // Switch to adjacent tab
         if activeTabId == tabId, let idx = tabs.firstIndex(where: { $0.id == tabId }) {
             let remaining = tabs.filter { $0.id != tabId }
@@ -246,8 +253,15 @@ class SessionManager: ObservableObject {
 
     func closeAllTabs() {
         for tab in tabs {
-            connection(for: tab.id)?.killTab(tab.id)
+            let conn = connection(for: tab.id)
+            if conn?.connected == true {
+                conn?.killTab(tab.id)
+            }
         }
+        // Clear local tab state regardless of connection status —
+        // offline tabs can't be killed on the server but should still be dismissable
+        mac.tabs = []
+        pi.tabs = []
         activeTabId = nil
     }
 
