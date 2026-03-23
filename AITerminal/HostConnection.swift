@@ -1,7 +1,8 @@
 import Foundation
 
 /// Manages a single WebSocket connection to one host (Mac or Pi).
-/// Reconnects automatically, rotating through the provided host list on failure.
+/// Races all provided host addresses simultaneously — whichever responds first wins.
+/// Reconnects automatically on disconnect, retrying all hosts again.
 class HostConnection: ObservableObject {
     let hostId: String       // "mac" or "pi"
     private let hosts: [String]
@@ -20,12 +21,11 @@ class HostConnection: ObservableObject {
     /// Called with (tabId, messages) when transcript data arrives.
     var onTranscript: ((String, [[String: String]]) -> Void)?
 
-    private var webSocket: URLSessionWebSocketTask?
+    private var webSocket: URLSessionWebSocketTask?     // the winning socket
+    private var racingSockets: [URLSessionWebSocketTask] = []  // pending race contestants
     private let urlSession = URLSession(configuration: .default)
-    private var hostIndex = 0
     private var activeTabId: String?
     private var retryWork: DispatchWorkItem?
-    private var connectionTimeout: DispatchWorkItem?
 
     init(hostId: String, hosts: [String]) {
         self.hostId = hostId
@@ -35,32 +35,24 @@ class HostConnection: ObservableObject {
     // MARK: - Connection
 
     func connect() {
-        // Cancel any pending retry and connection timeout
         retryWork?.cancel()
         retryWork = nil
-        connectionTimeout?.cancel()
-        connectionTimeout = nil
-        // Close stale socket
+
+        // Cancel any existing active socket and all racers
         webSocket?.cancel(with: .goingAway, reason: nil)
+        webSocket = nil
+        racingSockets.forEach { $0.cancel(with: .goingAway, reason: nil) }
+        racingSockets.removeAll()
 
-        let host = hosts[hostIndex]
-        guard let url = URL(string: "ws://\(host):\(port)") else { return }
-        print("[\(hostId)] connecting to \(url)")
-        webSocket = urlSession.webSocketTask(with: url)
-        webSocket?.resume()
-        receive()
-
-        // If not connected within 5s (e.g. raspberrypi.local mDNS hangs off local network),
-        // rotate to the next host immediately instead of waiting for the OS timeout.
-        let timeout = DispatchWorkItem { [weak self] in
-            guard let self, !self.connected else { return }
-            print("[\(self.hostId)] connect timeout for \(host), rotating to next host")
-            self.webSocket?.cancel(with: .goingAway, reason: nil)
-            self.hostIndex = (self.hostIndex + 1) % self.hosts.count
-            self.connect()
+        // Race all hosts — whichever sends the first message wins
+        for host in hosts {
+            guard let url = URL(string: "ws://\(host):\(port)") else { continue }
+            print("[\(hostId)] racing \(url)")
+            let ws = urlSession.webSocketTask(with: url)
+            racingSockets.append(ws)
+            ws.resume()
+            receiveFrom(ws)
         }
-        connectionTimeout = timeout
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: timeout)
     }
 
     /// Immediately reconnect if not already connected (e.g. returning from background).
@@ -72,29 +64,48 @@ class HostConnection: ObservableObject {
 
     private func scheduleRetry() {
         retryWork?.cancel()
-        let work = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.hostIndex = (self.hostIndex + 1) % self.hosts.count
-            self.connect()
-        }
+        let work = DispatchWorkItem { [weak self] in self?.connect() }
         retryWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 3, execute: work)
     }
 
-    private func receive() {
-        webSocket?.receive { [weak self] result in
+    private func receiveFrom(_ ws: URLSessionWebSocketTask) {
+        ws.receive { [weak self] result in
             guard let self else { return }
             switch result {
             case .success(let message):
-                if case .string(let text) = message { self.handleMessage(text) }
-                self.receive()
-            case .failure(let error):
-                print("[\(self.hostId)] error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
-                    self.connectionTimeout?.cancel()
-                    self.connectionTimeout = nil
-                    self.connected = false
-                    self.scheduleRetry()
+                    // If a different socket already won the race, discard and stop
+                    if let active = self.webSocket, active !== ws { return }
+
+                    // First to respond wins — cancel all other racers
+                    if self.webSocket == nil {
+                        self.racingSockets.filter { $0 !== ws }.forEach {
+                            $0.cancel(with: .goingAway, reason: nil)
+                        }
+                        self.racingSockets.removeAll()
+                        self.webSocket = ws
+                        print("[\(self.hostId)] connected via \(ws)")
+                    }
+
+                    if case .string(let text) = message { self.handleMessage(text) }
+                    self.receiveFrom(ws)
+                }
+
+            case .failure(let error):
+                print("[\(self.hostId)] socket error: \(error.localizedDescription)")
+                DispatchQueue.main.async {
+                    self.racingSockets.removeAll { $0 === ws }
+
+                    if ws === self.webSocket {
+                        // Active connection dropped
+                        self.webSocket = nil
+                        self.connected = false
+                        self.scheduleRetry()
+                    } else if !self.connected && self.racingSockets.isEmpty && self.webSocket == nil {
+                        // All racers failed
+                        self.scheduleRetry()
+                    }
                 }
             }
         }
@@ -126,8 +137,6 @@ class HostConnection: ObservableObject {
                 let wasConnected = self.connected
                 self.tabs = parsed
                 self.connected = true
-                self.connectionTimeout?.cancel()
-                self.connectionTimeout = nil
                 // Re-subscribe after reconnect
                 if !wasConnected {
                     self.onConnected?()
