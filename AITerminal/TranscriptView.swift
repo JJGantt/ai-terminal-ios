@@ -60,8 +60,7 @@ private struct MarkdownMessage: View {
     }
 
     private func attributed(_ raw: String) -> AttributedString {
-        let opts = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlinesOnlyPreservingWhitespace)
-        return (try? AttributedString(markdown: raw, options: opts)) ?? AttributedString(raw)
+        return (try? AttributedString(markdown: raw)) ?? AttributedString(raw)
     }
 }
 
